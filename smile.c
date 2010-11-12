@@ -124,7 +124,9 @@ int main()
     c.buffer[3] = 0;
     c.buffer[4] = 0x20;
     
-    if (smile_parse(&c)) {
+    smile_stream *c2 = smile_stream_create(":)\na\x20");
+    
+    if (smile_parse(c2)) {
         printf("failure\n");
     }
     else {

@@ -62,47 +62,42 @@ typedef struct {
 } parser_state;
 
 
-static int consume_next_token(parser_state *ps, smile_stream *s);
+static int consume_next_value(parser_state *ps, smile_stream *s);
 
 
 static int consume_object(parser_state *ps, smile_stream *s) {
     
-    return consume_next_token(ps, s);
+    return consume_next_value(ps, s);
 }
 
-static int consume_next_token(parser_state *ps, smile_stream *s) {
+static int consume_next_value(parser_state *ps, smile_stream *s) {
     unsigned char c;
     int rv;
     if ((rv = ss_getc(&c, s))) return rv;
     printf("TOKEN TYPE %x\n", c);
     switch (c) {
-        case SMILE_START_OBJECT:
-            printf("start object\n");
-            return consume_object(ps, s);
         case SMILE_EOS:
             printf("end of stream\n");
             return SUCCESS;
+        case SMILE_START_OBJECT:
+            printf("start object\n");
+            return consume_object(ps, s);
         case SMILE_NULL:
             printf("null\n");
-            return consume_next_token(ps, s);
-            break;
+            return consume_next_value(ps, s);
         case SMILE_EMPTY_STRING:
             printf("empty string\n");
-            return consume_next_token(ps, s);
-            break;
+            return consume_next_value(ps, s);
         case SMILE_TRUE:
             printf("true\n");
-            return consume_next_token(ps, s);
-            break;
+            return consume_next_value(ps, s);
         case SMILE_FALSE:
             printf("true\n");
-            return consume_next_token(ps, s);
-            break;
+            return consume_next_value(ps, s);
         default:
             printf("DEFAULT OOPS\n");
-            break;
+            return 1;
     }
-    return SUCCESS;
 }
 
 static int consume_header(parser_state *ps, smile_stream *s) {
@@ -114,7 +109,7 @@ static int consume_header(parser_state *ps, smile_stream *s) {
     if ((rv = ss_getc(&c, s))) return rv;
     ps->flags = c;
     
-    return consume_next_token(ps, s);
+    return consume_next_value(ps, s);
 }
 
 int smile_parse(smile_stream *stream) {

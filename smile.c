@@ -16,7 +16,10 @@ Bit 0 (mask 0x01): Whether shared property name checking was enabled during enco
 #include "smile.h"
 
 // Smile Stream
-#define SMILE_EOS = 0xFF;
+#define SMILE_EOS 0xFF
+#define SUCCESS 0
+
+// buffer bits
 
 struct smile_stream_t {
     size_t location;
@@ -33,22 +36,56 @@ smile_stream* smile_stream_create(const char* string) {
 }
 
 int smile_stream_destroy(smile_stream* stream) {
-    return 0;
+    return SUCCESS;
 }
 
 // returns SMILE_EOS at end of stream
 static int ss_getc(unsigned char* c, smile_stream *s) {
     *c = s->buffer[s->location++];
-    return 0;
+    return SUCCESS;
 }
 
 
 
-// Parser
+#define SMILE_EMPTY_STRING 0x20
+#define SMILE_NULL 0x21
+#define SMILE_TRUE 0x22
+#define SMILE_FALSE 0x23
+
+// Parser bits
 
 typedef struct {
     unsigned char flags;
 } parser_state;
+
+
+static int consume_next_token(parser_state *ps, smile_stream *s) {
+    unsigned char c;
+    int rv;
+    if ((rv = ss_getc(&c, s))) return rv;
+    printf("TOKEN TYPE %x\n", c);
+    switch (c) {
+        case SMILE_NULL:
+            // null;
+            printf("null\n");
+            break;
+        case SMILE_EMPTY_STRING:
+            // empty string
+            printf("empty string\n");
+            break;
+        case SMILE_TRUE:
+            // true
+            break;
+        case SMILE_FALSE:
+            // false
+            break;
+        default:
+            // OOPS
+        printf("DEFAULT %x\n", c);
+            break;
+    }
+    return SUCCESS;
+}
 
 static int consume_header(parser_state *ps, smile_stream *s) {
     unsigned char c;
@@ -57,27 +94,37 @@ static int consume_header(parser_state *ps, smile_stream *s) {
     if ((rv = ss_getc(&c, s)) || c != ')') return rv;
     if ((rv = ss_getc(&c, s)) || c != '\n') return rv;
     if ((rv = ss_getc(&c, s))) return rv;
-    
     ps->flags = c;
-    return rv;
+    
+    return consume_next_token(ps, s);
 }
 
 int smile_parse(smile_stream *stream) {
     int rv;
     parser_state ps;
-    if (!(rv = consume_header(&ps, stream))) {
-        printf("noooooo\n");
-        return rv;
-    }
+    if ((rv = consume_header(&ps, stream))) return rv;
     
-    return 0;
+    return SUCCESS;
 }
 
+
+// test bits
+
 int main()
-{    
-    smile_stream *c = smile_stream_create(":)\na");
+{
+    smile_stream c;
+    unsigned char buf[5];
+
+    c.location = 0;
+    c.size = 5;
+    c.buffer = buf;
+    c.buffer[0] = ':';
+    c.buffer[1] = ')';
+    c.buffer[2] = '\n';
+    c.buffer[3] = 0;
+    c.buffer[4] = 0x20;
     
-    if (!smile_parse(c)) {
+    if (smile_parse(&c)) {
         printf("failure\n");
     }
     else {

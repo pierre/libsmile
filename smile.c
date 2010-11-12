@@ -15,9 +15,17 @@ Bit 0 (mask 0x01): Whether shared property name checking was enabled during enco
 #include <string.h>
 #include "smile.h"
 
-// Smile Stream
-#define SMILE_EOS 0xFF
 #define SUCCESS 0
+
+// Smile Tokens
+#define SMILE_EOS 0xFF
+#define SMILE_EMPTY_STRING 0x20
+#define SMILE_NULL 0x21
+#define SMILE_TRUE 0x22
+#define SMILE_FALSE 0x23
+
+#define SMILE_START_OBJECT 0xFA
+#define SMILE_END_OBJECT 0xFB
 
 // buffer bits
 
@@ -39,18 +47,13 @@ int smile_stream_destroy(smile_stream* stream) {
     return SUCCESS;
 }
 
+
+
 // returns SMILE_EOS at end of stream
 static int ss_getc(unsigned char* c, smile_stream *s) {
     *c = s->buffer[s->location++];
     return SUCCESS;
 }
-
-
-
-#define SMILE_EMPTY_STRING 0x20
-#define SMILE_NULL 0x21
-#define SMILE_TRUE 0x22
-#define SMILE_FALSE 0x23
 
 // Parser bits
 
@@ -59,29 +62,44 @@ typedef struct {
 } parser_state;
 
 
+static int consume_next_token(parser_state *ps, smile_stream *s);
+
+
+static int consume_object(parser_state *ps, smile_stream *s) {
+    
+    return consume_next_token(ps, s);
+}
+
 static int consume_next_token(parser_state *ps, smile_stream *s) {
     unsigned char c;
     int rv;
     if ((rv = ss_getc(&c, s))) return rv;
     printf("TOKEN TYPE %x\n", c);
     switch (c) {
+        case SMILE_START_OBJECT:
+            printf("start object\n");
+            return consume_object(ps, s);
+        case SMILE_EOS:
+            printf("end of stream\n");
+            return SUCCESS;
         case SMILE_NULL:
-            // null;
             printf("null\n");
+            return consume_next_token(ps, s);
             break;
         case SMILE_EMPTY_STRING:
-            // empty string
             printf("empty string\n");
+            return consume_next_token(ps, s);
             break;
         case SMILE_TRUE:
-            // true
+            printf("true\n");
+            return consume_next_token(ps, s);
             break;
         case SMILE_FALSE:
-            // false
+            printf("true\n");
+            return consume_next_token(ps, s);
             break;
         default:
-            // OOPS
-        printf("DEFAULT %x\n", c);
+            printf("DEFAULT OOPS\n");
             break;
     }
     return SUCCESS;
@@ -111,20 +129,9 @@ int smile_parse(smile_stream *stream) {
 // test bits
 
 int main()
-{
-    smile_stream c;
-    unsigned char buf[5];
-
-    c.location = 0;
-    c.size = 5;
-    c.buffer = buf;
-    c.buffer[0] = ':';
-    c.buffer[1] = ')';
-    c.buffer[2] = '\n';
-    c.buffer[3] = 0;
-    c.buffer[4] = 0x20;
-    
-    smile_stream *c2 = smile_stream_create(":)\na\x20");
+{    
+    // HEADER START_OBJECT EOS
+    smile_stream *c2 = smile_stream_create(":)\nX\xFA\xFF");
     
     if (smile_parse(c2)) {
         printf("failure\n");

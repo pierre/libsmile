@@ -28,6 +28,188 @@
 
 #include "smile.h"
 
+int indent = 0;
+void decode_key(u8** orig_data)
+{
+    int length = 0;
+    const u8* ip = *orig_data;
+
+    if (*ip >= 0x01 && *ip <= 0x1F) {
+        // Reserved for future use
+    } else if (*ip == 0x20) {
+        // Empty String
+        putchar('"');
+        putchar('"');
+    } else if (*ip >= 0x21 && *ip <= 0x2F) {
+        // Reserved for future use
+         (*orig_data)++;
+    } else if (*ip >= 0x30 && *ip <= 0x33) {
+        // "Long" shared key name reference
+         (*orig_data)++;
+    } else if (*ip == 0x32) {
+        // Long (not-yet-shared) Unicode name
+         (*orig_data)++;
+    } else if (*ip >= 0x35 && *ip <= 0x39) {
+        // Reserved for future use
+         (*orig_data)++;
+    } else if (*ip == 0x3A) {
+        // Error
+        fprintf(stderr, "Error decoding key\n");
+        exit(1);
+    } else if (*ip >= 0x3B && *ip <= 0x3F) {
+        // Reserved for future use
+    } else if (*ip >= 0x40 && *ip <= 0x7F) {
+        // "Short" shared key name reference
+    } else if (*ip >= 0x80 && *ip <= 0xBF) {
+        // Short Ascii names
+        // 5 LSB used to indicate lengths from 2 to 32 (bytes == chars)
+        length = (*ip & 0x1F) + 1;
+        (*orig_data) += 1 + length;
+        ip++;
+
+        PRINT_STRING_KEY(ip, length)
+        PRINT_EOK
+    } else if (*ip >= 0xC0 && *ip <= 0xF7) {
+        // Short Unicode names
+        // 5 LSB used to indicate lengths from 1 to 32 (bytes == chars)
+        length = (*ip & 0x1F);
+        (*orig_data) += length;
+        ip++;
+
+        PRINT(ip, length)
+    } else if (*ip >= 0xF8 && *ip <= 0xFA) {
+        // Reserved
+        (*orig_data)++;
+    } else if (*ip == 0xFB) {
+        // END_OBJECT marker
+        putchar('}');
+        (*orig_data)++;
+    } else if (*ip >= 0xFC) {
+        // Reserved
+        (*orig_data)++;
+    }
+}
+
+void decode_value(u8** orig_data)
+{
+    int length = 0;
+    u8* ip = *orig_data;
+
+    if (*ip >= 0x01 && *ip <= 0x1f) {
+        // Reference value
+        length = (*ip & 0xF8);
+        (*orig_data)++;
+    } else if (*ip >= 0x20 && *ip <= 0x23) {
+        if (*ip == 0x20) {
+            // Empty String
+            putchar('"');
+            putchar('"');
+        } else if (*ip == 0x21) {
+            // null
+            putchar('(');
+            putchar('n');
+            putchar('u');
+            putchar('l');
+            putchar('l');
+            putchar(')');
+        } else if (*ip == 0x22) {
+            // false
+            putchar('f');
+            putchar('a');
+            putchar('l');
+            putchar('s');
+            putchar('e');
+        } else if (*ip == 0x21) {
+            // true
+            putchar('t');
+            putchar('r');
+            putchar('u');
+            putchar('e');
+        }
+        (*orig_data)++;
+    // Integral numbers
+    } else if (*ip >= 0x24 && *ip <= 0x27) {
+        length = (*ip & 0x03);
+        (*orig_data)++;
+        ip++;
+
+        if (length == 0) {
+            // 32-bit
+            PRINT_INT_VALUE((int) **orig_data)
+            (*orig_data) += 4;
+        } else if (length == 1) {
+            // 64-bit
+            PRINT_LONG_VALUE((long) **orig_data)
+            (*orig_data) += 8;
+        } else if (length == 2) {
+            // BigInteger
+            (*orig_data)++;
+        } else {
+            // Reserved for future use
+            (*orig_data)++;
+        }
+    // Floating point numbers
+    } else if (*ip >= 0x28 && *ip <= 0x2B) {
+        (*orig_data)++;
+    // Reserved for future use
+    } else if (*ip >= 0x2C && *ip <= 0x3F) {
+        (*orig_data)++;
+    // Tiny ASCII
+    } else if (*ip >= 0x40 && *ip <= 0x5F) {
+        // 5 LSB used to indicate lengths from 2 to 32 (bytes == chars)
+        length = (*ip & 0x1F) + 1;
+        (*orig_data) += 1 + length;
+        ip++;
+
+        PRINT_STRING_VALUE(ip, length)
+    // Small ASCII
+    } else if (*ip >= 0x60 && *ip <= 0x7F) {
+        // 5 LSB used to indicate lengths from 33 to 64 (bytes == chars)
+        length = (*ip & 0x1F) + 32;
+        (*orig_data) += 1 + length;
+        ip++;
+
+        PRINT_STRING_VALUE(ip, length)
+    // Tiny Unicode
+    } else if (*ip >= 0x80 && *ip <= 0x9F) {
+        // 5 LSB used to indicate _byte_ lengths from 2 to 33
+        length = (*ip & 0x1F) + 1;
+        (*orig_data) += 1 + length;
+        ip++;
+
+        PRINT_STRING_VALUE(ip, length)
+        PRINT_EOK
+    // Small Unicode
+    } else if (*ip >= 0xA0 && *ip <= 0xBF) {
+        // 5 LSB used to indicate _byte_ lengths from 34 to 65
+        length = (*ip & 0x1F) + 33;
+        (*orig_data) += 1 + length;
+        ip++;
+
+        PRINT_STRING_VALUE(ip, length)
+        PRINT_EOK
+    // Small integers
+    } else if (*ip >= 0xC0 && *ip <= 0xDF) {
+        (*orig_data)++;
+    // Misc; binary / text / structure markers
+    } else {
+        if (*ip == SMILE_START_OBJECT) {
+            // New object
+            indent += 2;
+            putchar('{');
+        } else if (*ip == SMILE_END_OBJECT) {
+            putchar('}');
+        } else if  (*ip == SMILE_START_ARRAY) {
+            putchar('[');
+        } else if (*ip == SMILE_END_ARRAY) {
+            putchar(']');
+        } else {
+                // TODO
+        }
+        (*orig_data)++;
+    }
+}
+
 // Usage: gcc -Wall smile.c -o smile && ./smile data.file
 // Decodes raw smile
 int main(int argc, char *argv[])
@@ -39,9 +221,8 @@ int main(int argc, char *argv[])
     ssize_t bytes_read;
     u8 buf[BUFFER_SIZE];
     char header[4];
-    const u8* ip;
+    u8* ip;
     u8* eob;
-    int length = 0;
 
     nbytes = sizeof(buf);
 
@@ -83,99 +264,9 @@ int main(int argc, char *argv[])
         ip = buf;
         eob = buf + nbytes;
         while (ip < eob) {
-            if (*ip >= (u8) 0x01 && *ip <= (u8) 0x1f) {
-                // Reference value
-                length = (*ip & 0xF8);
-            } else if (*ip >= (u8) 0x20 && *ip <= (u8) 0x23) {
-                if (*ip == 0x20) {
-                    // Empty String
-                    putchar('"');
-                    putchar('"');
-                } else if (*ip == 0x21) {
-                    // null
-                    putchar('(');
-                    putchar('n');
-                    putchar('u');
-                    putchar('l');
-                    putchar('l');
-                    putchar(')');
-                } else if (*ip == 0x22) {
-                    // false
-                    putchar('f');
-                    putchar('a');
-                    putchar('l');
-                    putchar('s');
-                    putchar('e');
-                } else if (*ip == 0x21) {
-                    // true
-                    putchar('t');
-                    putchar('r');
-                    putchar('u');
-                    putchar('e');
-                }
-            // Integral numbers
-            } else if (*ip >= (u8) 0x24 && *ip <= (u8) 0x27) {
-                length = (*ip & 0x03);
-                if (length == 0) {
-                    // 32-bit
-                } else if (length == 1) {
-                    // 64-bit
-                } else if (length == 2) {
-                    // BigInteger
-                } else {
-                    // Reserved for future use
-                }
-            // Floating point numbers
-            } else if (*ip >= (u8) 0x28 && *ip <= (u8) 0x2B) {
-            // Reserved for future use
-            } else if (*ip >= (u8) 0x2C && *ip <= (u8) 0x3F) {
-            // Tiny ASCII
-            } else if (*ip >= (u8) 0x40 && *ip <= (u8) 0x5F) {
-                // 5 LSB used to indicate lengths from 1 to 32 (bytes == chars)
-                length = (*ip & 0x1F);
-                PRINT(ip, length)
-            // Small ASCII
-            } else if (*ip >= (u8) 0x60 && *ip <= (u8) 0x7F) {
-                // 5 LSB used to indicate lengths from 33 to 64 (bytes == chars)
-                length = (*ip & 0x1F) + 32;
-                PRINT(ip, length)
-            // Tiny Unicode
-            } else if (*ip >= (u8) 0x80 && *ip <= (u8) 0x9F) {
-                // 5 LSB used to indicate _byte_ lengths from 2 to 33
-                length = (*ip & 0x1F) + 1;
-                ip++;
-                putchar('"');
-                PRINT(ip, length)
-                putchar('"');
-                PRINT_EOK
-            // Small Unicode
-            } else if (*ip >= (u8) 0xA0 && *ip <= (u8) 0xBF) {
-                // 5 LSB used to indicate _byte_ lengths from 34 to 65
-                length = (*ip & 0x1F) + 33;
-                ip++;
-                putchar('"');
-                PRINT(ip, length)
-                putchar('"');
-                PRINT_EOK
-            // Small integers
-            } else if (*ip >= (u8) 0xC0 && *ip <= (u8) 0xDF) {
-            // Misc; binary / text / structure markers
-            } else {
-                if (*ip == SMILE_START_OBJECT) {
-                    putchar('{');
-                    putchar('\n');
-                } else if (*ip == SMILE_END_OBJECT) {
-                    putchar('}');
-                } else if  (*ip == SMILE_START_ARRAY) {
-                    putchar('[');
-                    putchar('\n');
-                } else if (*ip == SMILE_END_ARRAY) {
-                    putchar(']');
-                } else {
-                        // TODO
-                }
-            }
-            ip++;
+            decode_key((u8**) &ip);
+            decode_value((u8**) &ip);
+            putchar(',\n');
         }
     }
 

@@ -6,6 +6,24 @@ typedef unsigned char u8;
 #define DEBUG_BYTE(byte) printf("0x%02x ", (u8) byte);
 #define PRINT(ip, length) while (length--) {putchar(*ip++);}
 #define PRINT_EOK putchar(':'); putchar(' ');
+#define PRINT_INDENT printf("%-*s", indent, " ");
+
+#define ZZ_DECODE(n) ((n >> 1) ^ (-(n & 1)))
+
+#define PRINT_STRING_VALUE(ip, length) \
+    putchar('"'); \
+    PRINT(ip, length) \
+    putchar('"');
+
+#define PRINT_STRING_KEY(ip, length) \
+    PRINT_INDENT \
+    PRINT_STRING_VALUE(ip, length)
+
+#define PRINT_INT_VALUE(ip) \
+    printf("%d", ZZ_DECODE(ip));
+
+#define PRINT_LONG_VALUE(ip) \
+    printf("%lu", ZZ_DECODE(ip));
 
 #define SUCCESS 0
 

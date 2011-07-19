@@ -4,6 +4,8 @@
 typedef unsigned char u8;
 
 #define DEBUG_BYTE(byte) printf("0x%02x ", (u8) byte);
+#define PRINT(ip, length) while (length--) {putchar(*ip++);}
+#define PRINT_EOK putchar(':'); putchar(' ');
 
 #define SUCCESS 0
 

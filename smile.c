@@ -83,34 +83,96 @@ int main(int argc, char *argv[])
         ip = buf;
         eob = buf + nbytes;
         while (ip < eob) {
-            if (*ip == (char)0x00) {
-                // nothing
-            }
-            else if (*ip == SMILE_START_OBJECT) {
-                putchar('{');
-                putchar('\n');
-            } else if (*ip == SMILE_END_OBJECT) {
-                putchar('}');
-            } else if  (*ip == SMILE_START_ARRAY) {
-                putchar('[');
-                putchar('\n');
-            } else if (*ip == SMILE_END_ARRAY) {
-                putchar(']');
-            } else {
-                // Tiny Unicode, Small Unicode
-                if (*ip >= (u8) 0x80 && *ip <= (u8) 0xBF) {
-                    length = (*ip & 0x1F);
-                    ip++;
+            if (*ip >= (u8) 0x01 && *ip <= (u8) 0x1f) {
+                // Reference value
+                length = (*ip & 0xF8);
+            } else if (*ip >= (u8) 0x20 && *ip <= (u8) 0x23) {
+                if (*ip == 0x20) {
+                    // Empty String
                     putchar('"');
-                    // humm, why +1?
-                    while (length + 1) {
-                        putchar(*ip);
-                        ip++;
-                        length--;
-                    }
                     putchar('"');
+                } else if (*ip == 0x21) {
+                    // null
+                    putchar('(');
+                    putchar('n');
+                    putchar('u');
+                    putchar('l');
+                    putchar('l');
+                    putchar(')');
+                } else if (*ip == 0x22) {
+                    // false
+                    putchar('f');
+                    putchar('a');
+                    putchar('l');
+                    putchar('s');
+                    putchar('e');
+                } else if (*ip == 0x21) {
+                    // true
+                    putchar('t');
+                    putchar('r');
+                    putchar('u');
+                    putchar('e');
+                }
+            // Integral numbers
+            } else if (*ip >= (u8) 0x24 && *ip <= (u8) 0x27) {
+                length = (*ip & 0x03);
+                if (length == 0) {
+                    // 32-bit
+                } else if (length == 1) {
+                    // 64-bit
+                } else if (length == 2) {
+                    // BigInteger
                 } else {
-                    // TODO
+                    // Reserved for future use
+                }
+            // Floating point numbers
+            } else if (*ip >= (u8) 0x28 && *ip <= (u8) 0x2B) {
+            // Reserved for future use
+            } else if (*ip >= (u8) 0x2C && *ip <= (u8) 0x3F) {
+            // Tiny ASCII
+            } else if (*ip >= (u8) 0x40 && *ip <= (u8) 0x5F) {
+                // 5 LSB used to indicate lengths from 1 to 32 (bytes == chars)
+                length = (*ip & 0x1F);
+                PRINT(ip, length)
+            // Small ASCII
+            } else if (*ip >= (u8) 0x60 && *ip <= (u8) 0x7F) {
+                // 5 LSB used to indicate lengths from 33 to 64 (bytes == chars)
+                length = (*ip & 0x1F) + 32;
+                PRINT(ip, length)
+            // Tiny Unicode
+            } else if (*ip >= (u8) 0x80 && *ip <= (u8) 0x9F) {
+                // 5 LSB used to indicate _byte_ lengths from 2 to 33
+                length = (*ip & 0x1F) + 1;
+                ip++;
+                putchar('"');
+                PRINT(ip, length)
+                putchar('"');
+                PRINT_EOK
+            // Small Unicode
+            } else if (*ip >= (u8) 0xA0 && *ip <= (u8) 0xBF) {
+                // 5 LSB used to indicate _byte_ lengths from 34 to 65
+                length = (*ip & 0x1F) + 33;
+                ip++;
+                putchar('"');
+                PRINT(ip, length)
+                putchar('"');
+                PRINT_EOK
+            // Small integers
+            } else if (*ip >= (u8) 0xC0 && *ip <= (u8) 0xDF) {
+            // Misc; binary / text / structure markers
+            } else {
+                if (*ip == SMILE_START_OBJECT) {
+                    putchar('{');
+                    putchar('\n');
+                } else if (*ip == SMILE_END_OBJECT) {
+                    putchar('}');
+                } else if  (*ip == SMILE_START_ARRAY) {
+                    putchar('[');
+                    putchar('\n');
+                } else if (*ip == SMILE_END_ARRAY) {
+                    putchar(']');
+                } else {
+                        // TODO
                 }
             }
             ip++;

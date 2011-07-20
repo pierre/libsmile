@@ -24,18 +24,7 @@
 #include <string.h>
 
 #include "smile_decode.h"
-
-static long parse(u8 **msg) {
-    long x = 0;
-    while(!(**msg & 0x80)) {
-        x <<= 7;
-        x |= **msg;
-        (*msg)++;
-    }
-    x |= **msg;
-    (*msg)++;
-    return x;
-}
+#include "smile_utils.h"
 
 void smile_decode_key(u8** orig_data, struct content_handler* handler)
 {

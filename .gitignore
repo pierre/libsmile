@@ -1,5 +1,5 @@
 .sconsign.dblite
-smile
+c/smile
 a.out
 *.c.out
 *.o
@@ -22,3 +22,13 @@ config.status
 c/src/.dirstamp
 c/src/.deps
 Makefile
+mkmf.log
+.libs/
+config.guess
+config.sub
+*.la
+*.so
+libtool
+ltmain.sh
+*.lo
+*.bundle

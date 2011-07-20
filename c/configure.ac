@@ -12,6 +12,7 @@ AC_PROG_CC
 AM_PROG_CC_C_O
 
 # Checks for libraries.
+AC_PROG_LIBTOOL
 
 # Checks for header files.
 AC_CHECK_HEADERS([fcntl.h limits.h stdlib.h string.h unistd.h])

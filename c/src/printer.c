@@ -1,5 +1,6 @@
 #include <errno.h>
 #include <fcntl.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/stat.h>
@@ -44,34 +45,52 @@ inline void print_end_array()
 inline void print_start_key()
 {
     INDENT
-    putchar('"');
 }
 
 inline void print_end_key()
 {
-    putchar('"');
     putchar(':');
     putchar(' ');
 }
 
 inline void print_start_value()
 {
-    putchar('"');
 }
 
 inline void print_end_value()
 {
-    putchar('"');
     putchar(',');
     putchar('\n');
 }
 
-void print_value(const u8* ch, int start, int length)
+inline void print_null_value()
 {
+    printf("(null)");
+}
+
+inline void print_false_value()
+{
+    printf("false");
+}
+
+inline void print_true_value()
+{
+    printf("true");
+}
+
+inline void print_number_value(long number)
+{
+    printf("%lu", number);
+}
+
+void print_string(const u8* ch, int start, int length)
+{
+    putchar('"');
     const u8* ip = ch + start;
     while (length--) {
         putchar(*ip++);
     }
+    putchar('"');
 }
 
 struct content_handler printer = {
@@ -84,7 +103,11 @@ struct content_handler printer = {
     .end_key = print_end_key,
     .start_value = print_start_value,
     .end_value = print_end_value,
-    .characters = print_value
+    .null_value = print_null_value,
+    .false_value = print_false_value,
+    .true_value = print_true_value,
+    .number_value = print_number_value,
+    .characters = print_string
 };
 
 // Decodes raw smile

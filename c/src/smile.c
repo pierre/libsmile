@@ -14,7 +14,7 @@
  * under the License.
  */
 
-/* http://wiki.fasterxml.com/JacksonBinaryFormatSpec */
+/* http://wiki.fasterxml.com/SmileFormatSpec */
 
 #include <errno.h>
 #include <limits.h>
@@ -25,7 +25,18 @@
 
 #include "smile.h"
 
-int indent = 0;
+static long parse(u8 **msg) {
+    long x = 0;
+    while(!(**msg & 0x80)) {
+        x <<= 7;
+        x |= **msg;
+        (*msg)++;
+    }
+    x |= **msg;
+    (*msg)++;
+    return x;
+}
+
 void smile_decode_key(u8** orig_data, struct content_handler* handler)
 {
     int length = 0;
@@ -115,27 +126,15 @@ void smile_decode_value(u8** orig_data, struct content_handler* handler)
             // Empty String
         } else if (*ip == 0x21) {
             // null
-            putchar('(');
-            putchar('n');
-            putchar('u');
-            putchar('l');
-            putchar('l');
-            putchar(')');
+            handler->null_value();
             handler->end_value();
         } else if (*ip == 0x22) {
             // false
-            putchar('f');
-            putchar('a');
-            putchar('l');
-            putchar('s');
-            putchar('e');
+            handler->false_value();
             handler->end_value();
         } else if (*ip == 0x21) {
             // true
-            putchar('t');
-            putchar('r');
-            putchar('u');
-            putchar('e');
+            handler->true_value();
         }
         (*orig_data)++;
         handler->end_value();
@@ -148,14 +147,12 @@ void smile_decode_value(u8** orig_data, struct content_handler* handler)
         if (length == 0) {
             // 32-bit
             handler->start_value();
-            PRINT_INT_VALUE((int) **orig_data)
-            (*orig_data) += 4;
+            handler->number_value(parse(orig_data));
             handler->end_value();
         } else if (length == 1) {
             // 64-bit
             handler->start_value();
-            PRINT_LONG_VALUE((long) **orig_data)
-            (*orig_data) += 8;
+            handler->number_value(parse(orig_data));
             handler->end_value();
         } else if (length == 2) {
             // BigInteger

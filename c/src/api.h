@@ -22,7 +22,17 @@ struct content_handler {
     void (*start_value) ();
     // Receive notification of the end of a value
     void (*end_value) ();
-    // Receive notification of key or value data
+
+    // Receive notification of null value data
+    void (*null_value) ();
+    // Receive notification of false value data
+    void (*false_value) ();
+    // Receive notification of true value data
+    void (*true_value) ();
+    // Receive notification of number value data
+    void (*number_value) (long);
+
+    // Receive notification of key or value data (others)
     void (*characters) (const u8*, int, int);
 };
 

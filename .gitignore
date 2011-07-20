@@ -2,3 +2,17 @@
 smile
 *.c.out
 *.o
+c/Makefile.in
+c/aclocal.m4
+c/autom4te.cache/
+c/autoscan.log
+c/compile
+c/config.h.in
+c/config.h.in~
+c/config.log
+c/configure
+c/depcomp
+c/install-sh
+c/missing
+c/src/.deps/
+c/stamp-h1

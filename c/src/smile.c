@@ -18,18 +18,15 @@
 
 #include <errno.h>
 #include <limits.h>
-#include <fcntl.h>
 #include <unistd.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
-#include <sys/types.h>
-#include <sys/stat.h>
 
 #include "smile.h"
 
 int indent = 0;
-void decode_key(u8** orig_data)
+void smile_decode_key(u8** orig_data, struct content_handler* handler)
 {
     int length = 0;
     const u8* ip = *orig_data;
@@ -38,20 +35,25 @@ void decode_key(u8** orig_data)
         // Reserved for future use
     } else if (*ip == 0x20) {
         // Empty String
-        putchar('"');
-        putchar('"');
+        handler->start_key();
+        (*orig_data)++;
+        handler->end_key();
     } else if (*ip >= 0x21 && *ip <= 0x2F) {
         // Reserved for future use
-         (*orig_data)++;
+        (*orig_data)++;
     } else if (*ip >= 0x30 && *ip <= 0x33) {
         // "Long" shared key name reference
-         (*orig_data)++;
+        handler->start_key();
+        (*orig_data)++;
+        handler->end_key();
     } else if (*ip == 0x32) {
         // Long (not-yet-shared) Unicode name
-         (*orig_data)++;
+        handler->start_key();
+        (*orig_data)++;
+        handler->end_key();
     } else if (*ip >= 0x35 && *ip <= 0x39) {
         // Reserved for future use
-         (*orig_data)++;
+        (*orig_data)++;
     } else if (*ip == 0x3A) {
         // Error
         fprintf(stderr, "Error decoding key\n");
@@ -60,29 +62,35 @@ void decode_key(u8** orig_data)
         // Reserved for future use
     } else if (*ip >= 0x40 && *ip <= 0x7F) {
         // "Short" shared key name reference
+        handler->start_key();
+        (*orig_data)++;
+        handler->end_key();
     } else if (*ip >= 0x80 && *ip <= 0xBF) {
         // Short Ascii names
         // 5 LSB used to indicate lengths from 2 to 32 (bytes == chars)
+        handler->start_key();
         length = (*ip & 0x1F) + 1;
         (*orig_data) += 1 + length;
         ip++;
 
-        PRINT_STRING_KEY(ip, length)
-        PRINT_EOK
+        handler->characters(ip, 0, length);
+        handler->end_key();
     } else if (*ip >= 0xC0 && *ip <= 0xF7) {
         // Short Unicode names
         // 5 LSB used to indicate lengths from 1 to 32 (bytes == chars)
+        handler->start_key();
         length = (*ip & 0x1F);
         (*orig_data) += length;
         ip++;
 
-        PRINT(ip, length)
+        handler->characters(ip, 0, length);
+        handler->end_key();
     } else if (*ip >= 0xF8 && *ip <= 0xFA) {
         // Reserved
         (*orig_data)++;
     } else if (*ip == 0xFB) {
         // END_OBJECT marker
-        putchar('}');
+        handler->end_object();
         (*orig_data)++;
     } else if (*ip >= 0xFC) {
         // Reserved
@@ -90,20 +98,21 @@ void decode_key(u8** orig_data)
     }
 }
 
-void decode_value(u8** orig_data)
+void smile_decode_value(u8** orig_data, struct content_handler* handler)
 {
     int length = 0;
     u8* ip = *orig_data;
 
     if (*ip >= 0x01 && *ip <= 0x1f) {
         // Reference value
+        handler->start_value();
         length = (*ip & 0xF8);
         (*orig_data)++;
+        handler->end_value();
     } else if (*ip >= 0x20 && *ip <= 0x23) {
+        handler->start_value();
         if (*ip == 0x20) {
             // Empty String
-            putchar('"');
-            putchar('"');
         } else if (*ip == 0x21) {
             // null
             putchar('(');
@@ -112,6 +121,7 @@ void decode_value(u8** orig_data)
             putchar('l');
             putchar('l');
             putchar(')');
+            handler->end_value();
         } else if (*ip == 0x22) {
             // false
             putchar('f');
@@ -119,6 +129,7 @@ void decode_value(u8** orig_data)
             putchar('l');
             putchar('s');
             putchar('e');
+            handler->end_value();
         } else if (*ip == 0x21) {
             // true
             putchar('t');
@@ -127,6 +138,7 @@ void decode_value(u8** orig_data)
             putchar('e');
         }
         (*orig_data)++;
+        handler->end_value();
     // Integral numbers
     } else if (*ip >= 0x24 && *ip <= 0x27) {
         length = (*ip & 0x03);
@@ -135,74 +147,91 @@ void decode_value(u8** orig_data)
 
         if (length == 0) {
             // 32-bit
+            handler->start_value();
             PRINT_INT_VALUE((int) **orig_data)
             (*orig_data) += 4;
+            handler->end_value();
         } else if (length == 1) {
             // 64-bit
+            handler->start_value();
             PRINT_LONG_VALUE((long) **orig_data)
             (*orig_data) += 8;
+            handler->end_value();
         } else if (length == 2) {
             // BigInteger
+            handler->start_value();
             (*orig_data)++;
+            handler->end_value();
         } else {
             // Reserved for future use
             (*orig_data)++;
         }
+    // Integral numbers
     // Floating point numbers
     } else if (*ip >= 0x28 && *ip <= 0x2B) {
+        handler->start_value();
         (*orig_data)++;
+        handler->end_value();
     // Reserved for future use
     } else if (*ip >= 0x2C && *ip <= 0x3F) {
+        handler->start_value();
         (*orig_data)++;
+        handler->end_value();
     // Tiny ASCII
     } else if (*ip >= 0x40 && *ip <= 0x5F) {
         // 5 LSB used to indicate lengths from 2 to 32 (bytes == chars)
+        handler->start_value();
         length = (*ip & 0x1F) + 1;
         (*orig_data) += 1 + length;
         ip++;
 
-        PRINT_STRING_VALUE(ip, length)
+        handler->characters(ip, 0, length);
+        handler->end_value();
     // Small ASCII
     } else if (*ip >= 0x60 && *ip <= 0x7F) {
         // 5 LSB used to indicate lengths from 33 to 64 (bytes == chars)
+        handler->start_value();
         length = (*ip & 0x1F) + 32;
         (*orig_data) += 1 + length;
         ip++;
 
-        PRINT_STRING_VALUE(ip, length)
+        handler->characters(ip, 0, length);
+        handler->end_value();
     // Tiny Unicode
     } else if (*ip >= 0x80 && *ip <= 0x9F) {
         // 5 LSB used to indicate _byte_ lengths from 2 to 33
+        handler->start_value();
         length = (*ip & 0x1F) + 1;
         (*orig_data) += 1 + length;
         ip++;
 
-        PRINT_STRING_VALUE(ip, length)
-        PRINT_EOK
+        handler->characters(ip, 0, length);
+        handler->end_value();
     // Small Unicode
     } else if (*ip >= 0xA0 && *ip <= 0xBF) {
         // 5 LSB used to indicate _byte_ lengths from 34 to 65
+        handler->start_value();
         length = (*ip & 0x1F) + 33;
         (*orig_data) += 1 + length;
         ip++;
 
-        PRINT_STRING_VALUE(ip, length)
-        PRINT_EOK
+        handler->characters(ip, 0, length);
+        handler->end_value();
     // Small integers
     } else if (*ip >= 0xC0 && *ip <= 0xDF) {
+        handler->start_value();
         (*orig_data)++;
+        handler->end_value();
     // Misc; binary / text / structure markers
     } else {
         if (*ip == SMILE_START_OBJECT) {
-            // New object
-            indent += 2;
-            putchar('{');
+            handler->start_object();
         } else if (*ip == SMILE_END_OBJECT) {
-            putchar('}');
+            handler->end_object();
         } else if  (*ip == SMILE_START_ARRAY) {
-            putchar('[');
+            handler->start_array();
         } else if (*ip == SMILE_END_ARRAY) {
-            putchar(']');
+            handler->end_array();
         } else {
                 // TODO
         }
@@ -210,68 +239,16 @@ void decode_value(u8** orig_data)
     }
 }
 
-// Usage: gcc -Wall smile.c -o smile && ./smile data.file
-// Decodes raw smile
-int main(int argc, char *argv[])
+int smile_decode_header(u8* header)
 {
-    int fd, rc = 0;
-    struct stat mystat;
-    const char* fname = argv[1];
-    size_t nbytes;
-    ssize_t bytes_read;
-    u8 buf[BUFFER_SIZE];
-    char header[4];
-    u8* ip;
-    u8* eob;
+    return (header[0] == ':' && header[1] == ')' && header[2] == '\n');
+}
 
-    nbytes = sizeof(buf);
-
-    rc = stat(fname, &mystat);
-    fd = open(fname, O_RDONLY);
-
-    if (fd == -1) {
-        fprintf (stderr, "%s: not a regular file.\n", fname);
-        exit(1);
+void smile_decode(u8* orig_data, int nbytes, struct content_handler* handler)
+{
+    u8* ip = orig_data;
+    while (nbytes--) {
+        smile_decode_key((u8**) &ip, handler);
+        smile_decode_value((u8**) &ip, handler);
     }
-
-
-    bytes_read = read(fd, header, 4);
-    if (bytes_read != 4) {
-          fprintf(stderr, "%s: unable to read header: \n", fname);
-          perror ("");
-          goto exit;
-    } else {
-        if (!(header[0] == ':' && header[1] == ')' && header[2] == '\n')) {
-            fprintf(stderr, "%s: bad header: %s\n", fname, header);
-            goto exit;
-        } else {
-            printf("Got header: %s", header);
-        }
-    }
-
-    while (1) {
-        // Read block by block
-        bytes_read = read(fd, buf, nbytes);
-        if (bytes_read == -1) {
-          fprintf(stderr, "%s: read error: \n", fname);
-          perror ("");
-          goto exit;
-        } else if (bytes_read == 0) {
-            break;
-        }
-
-        fprintf(stderr, "Read %lu bytes\n", (unsigned long int) bytes_read);
-        ip = buf;
-        eob = buf + nbytes;
-        while (ip < eob) {
-            decode_key((u8**) &ip);
-            decode_value((u8**) &ip);
-            putchar(',\n');
-        }
-    }
-
-exit:
-    close(fd);
-    puts("Done!");
-    exit(0);
 }

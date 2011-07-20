@@ -1,7 +1,7 @@
 #ifndef _SMILE_H_
 #define _SMILE_H_
 
-typedef unsigned char u8;
+#include "api.h"
 
 #define DEBUG_BYTE(byte) printf("0x%02x ", (u8) byte);
 #define PRINT(ip, length) while (length--) {putchar(*ip++);}
@@ -40,5 +40,10 @@ typedef unsigned char u8;
 #define SMILE_END_ARRAY (u8) 0xF9
 #define SMILE_START_OBJECT (u8) 0xFA
 #define SMILE_END_OBJECT (u8) 0xFB
+
+int smile_decode_header(u8*);
+void smile_decode_key(u8**, struct content_handler*);
+void smile_decode_value(u8**, struct content_handler*);
+void smile_decode(u8*, int, struct content_handler*);
 
 #endif /* !_SMILE_H_ */

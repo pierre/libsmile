@@ -23,7 +23,7 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "smile.h"
+#include "smile_decode.h"
 
 static long parse(u8 **msg) {
     long x = 0;

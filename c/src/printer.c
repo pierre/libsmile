@@ -9,7 +9,7 @@
 
 #include "api.h"
 #include "printer.h"
-#include "smile.h"
+#include "smile_decode.h"
 
 #define INDENT printf("%-*s", indent, " ");
 

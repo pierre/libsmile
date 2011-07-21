@@ -136,12 +136,14 @@ void smile_decode_value(u8** orig_data, struct content_handler* handler)
         if (length == 0) {
             // 32-bit
             handler->start_value();
-            handler->number_value(parse(orig_data));
+            handler->number_value(varint_decode(orig_data));
+            (*orig_data)++;
             handler->end_value();
         } else if (length == 1) {
             // 64-bit
             handler->start_value();
-            handler->number_value(parse(orig_data));
+            handler->number_value(varint_decode(orig_data));
+            (*orig_data)++;
             handler->end_value();
         } else if (length == 2) {
             // BigInteger

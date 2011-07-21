@@ -5,6 +5,7 @@
 
 #define ZZ_DECODE(n) ((n >> 1) ^ (-(n & 1)))
 
+long zzvarint_decode(u8**);
 long varint_decode(u8**);
 long varint_decode_buffer(u8*);
 

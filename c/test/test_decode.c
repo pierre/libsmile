@@ -49,13 +49,13 @@ inline void noop()
 {
 }
 
-inline void number(long number)
-{
-    // TODO
-    //printf("%lu\n", number);
-}
-
+static long expected_long = 0;
 static char* expected_string = NULL;
+
+inline void number(long actual)
+{
+    ASSERT_EQUAL(expected_long, actual)
+}
 
 inline void string(const u8* ch, int start, int length)
 {
@@ -91,7 +91,7 @@ void test_decode_smile()
 
     expected_string = "eventDate";
     smile_decode_key((u8**) &ip, &handler);
-    // TODO
+    expected_long = 1311225160270;
     smile_decode_value((u8**) &ip, &handler);
 
     expected_string = "eventGranularity";
@@ -101,7 +101,7 @@ void test_decode_smile()
 
     expected_string = "int";
     smile_decode_key((u8**) &ip, &handler);
-    // TODO
+    expected_long = 1242;
     smile_decode_value((u8**) &ip, &handler);
 
     expected_string = "string";
@@ -111,12 +111,12 @@ void test_decode_smile()
 
     expected_string = "negative";
     smile_decode_key((u8**) &ip, &handler);
-    // TODO
+    expected_long = -1;
     smile_decode_value((u8**) &ip, &handler);
 
     expected_string = "long";
     smile_decode_key((u8**) &ip, &handler);
-    // TODO
+    expected_long = 123456789;
     smile_decode_value((u8**) &ip, &handler);
 }
 

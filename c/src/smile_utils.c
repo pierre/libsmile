@@ -16,23 +16,28 @@
 
 #include "smile_utils.h"
 
-long varint_decode(u8 **msg)
+long zzvarint_decode(u8 **msg)
 {
-    // TODO - it doesn't work yet
-    return 0L;
+    return ZZ_DECODE(varint_decode(msg));
 }
 
-long varint_decode_buffer(u8* input)
+long varint_decode(u8 **msg)
 {
-    u8* msg = input;
     long x = 0;
-    while(!(*msg & 0x80)) {
+    while(!(**msg & 0x80)) {
         x <<= 7;
-        x |= *msg;
-        msg++;
+        x |= **msg;
+        (*msg)++;
     }
     // last byte only has 6 payload bits
     x <<= 6;
-    x |= (*msg & 0x3F);
+    x |= (**msg & 0x3F);
     return x;
+}
+
+// For testing
+long varint_decode_buffer(u8* input)
+{
+    u8* msg = input;
+    varint_decode(&msg);
 }

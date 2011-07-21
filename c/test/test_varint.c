@@ -34,17 +34,16 @@ static int pass = 0;
 
 void test_number_encoding()
 {
-    u8 buf[2];
-    buf[0] = 0x02;
-    buf[1] = 0xAC;
+    u8 buf[3];
+    buf[0] = 0x01;
+    buf[1] = 0x7C;
+    buf[2] = 0xA0;
 
     // 01 7c a0 should be 8080 (0x1F90)
     // 0x 0111 1100 1010 0000
     //     111 1100  010 0000
     //      11 1110 0010 0000
-    int i = 0x17ca0;
-    //printf("0x%X\n", ZZ_DECODE(varint_decode_buffer(&i)));
-    //ASSERT_EQUAL(300, varint_decode_buffer(0x017ca0));
+    ASSERT_EQUAL(8080, ZZ_DECODE(varint_decode_buffer(&buf)));
 }
 
 void test_zigzag()
@@ -59,6 +58,7 @@ void test_zigzag()
 
 void test_varint()
 {
+    test_number_encoding();
     test_zigzag();
     printf("varint tests run: %d assertions passed\n", pass);
 }

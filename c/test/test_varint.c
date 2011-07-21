@@ -16,7 +16,9 @@
 
 #include <errno.h>
 #include <stdio.h>
+#include <stdlib.h>
 
+#include "smile_tests.h"
 #include "../src/api.h"
 #include "../src/smile_utils.h"
 
@@ -30,15 +32,19 @@ static int pass = 0;
         pass++; \
     }
 
-void test_varint()
+void test_number_encoding()
 {
     u8 buf[2];
     buf[0] = 0x02;
     buf[1] = 0xAC;
 
-    // Standard example, see
-    // http://code.google.com/apis/protocolbuffers/docs/encoding.html#varints
-    ASSERT_EQUAL(300, varint_decode_buffer(buf));
+    // 01 7c a0 should be 8080 (0x1F90)
+    // 0x 0111 1100 1010 0000
+    //     111 1100  010 0000
+    //      11 1110 0010 0000
+    int i = 0x17ca0;
+    //printf("0x%X\n", ZZ_DECODE(varint_decode_buffer(&i)));
+    //ASSERT_EQUAL(300, varint_decode_buffer(0x017ca0));
 }
 
 void test_zigzag()
@@ -51,11 +57,8 @@ void test_zigzag()
     ASSERT_EQUAL(-2147483648, ZZ_DECODE(4294967295))
 }
 
-int main()
+void test_varint()
 {
-    //test_varint();
     test_zigzag();
-
-    printf("Tests passed: %d assertions run.\n", pass);
-    exit(0);
+    printf("varint tests run: %d assertions passed\n", pass);
 }

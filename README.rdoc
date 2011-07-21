@@ -10,7 +10,7 @@ To boostrap the build (you need autotools):
 
   cd c/ && bash build.sh
 
-You can then build via `make'.
+You can then build via `make' and run tests via `make check'.
 
 By default, the build produces multiple artifacts:
 

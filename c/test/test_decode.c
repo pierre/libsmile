@@ -18,6 +18,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#include "smile_tests.h"
 #include "../src/api.h"
 #include "../src/smile_decode.h"
 #include "../src/smile_utils.h"
@@ -51,7 +52,7 @@ inline void noop()
 inline void number(long number)
 {
     // TODO
-    printf("%lu\n", number);
+    //printf("%lu\n", number);
 }
 
 static char* expected_string = NULL;
@@ -83,8 +84,7 @@ struct content_handler handler = {
     .characters = string
 };
 
-
-void test_decode()
+void test_decode_smile()
 {
     // Header + 1
     u8* ip = data + 5;
@@ -120,10 +120,8 @@ void test_decode()
     smile_decode_value((u8**) &ip, &handler);
 }
 
-int main()
+void test_decode()
 {
-    test_decode();
-
-    printf("Tests passed: %d assertions run.\n", pass);
-    exit(0);
+    test_decode_smile();
+    printf("decode tests run: %d assertions passed\n", pass);
 }

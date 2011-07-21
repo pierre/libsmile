@@ -1,5 +1,5 @@
 AC_LANG(C)
-AC_PREREQ([2.68])
+AC_PREREQ([2.65])
 AC_INIT([libsmile], [0.1], [pierre@mouraf.org])
 AM_INIT_AUTOMAKE([-Wall -Werror])
 AC_LANG_WERROR

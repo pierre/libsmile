@@ -6,6 +6,7 @@ a.out
 Makefile.in
 aclocal.m4
 autom4te.cache/
+m4
 autoscan.log
 compile
 config.h.in
@@ -19,8 +20,8 @@ src/.deps/
 stamp-h1
 config.h
 config.status
-c/src/.dirstamp
-c/src/.deps
+.dirstamp
+.deps
 Makefile
 mkmf.log
 .libs/
@@ -32,3 +33,5 @@ libtool
 ltmain.sh
 *.lo
 *.bundle
+c/src/smile
+c/test/smile_tests

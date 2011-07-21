@@ -21,7 +21,7 @@ long zzvarint_decode(u8 **msg)
     return ZZ_DECODE(varint_decode(msg));
 }
 
-long varint_decode(u8 **msg)
+unsigned long varint_decode(u8 **msg)
 {
     long x = 0;
     while(!(**msg & 0x80)) {
@@ -36,7 +36,7 @@ long varint_decode(u8 **msg)
 }
 
 // For testing
-long varint_decode_buffer(u8* input)
+unsigned long varint_decode_buffer(u8* input)
 {
     u8* msg = input;
     varint_decode(&msg);

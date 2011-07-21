@@ -8,8 +8,6 @@
 #define PRINT_EOK putchar(':'); putchar(' ');
 #define PRINT_INDENT printf("%-*s", indent, " ");
 
-#define ZZ_DECODE(n) ((n >> 1) ^ (-(n & 1)))
-
 #define PRINT_STRING_VALUE(ip, length) \
     putchar('"'); \
     PRINT(ip, length) \

@@ -41,9 +41,20 @@ void test_varint()
     ASSERT_EQUAL(300, varint_decode_buffer(buf));
 }
 
+void test_zigzag()
+{
+    ASSERT_EQUAL(0, ZZ_DECODE(0))
+    ASSERT_EQUAL(-1, ZZ_DECODE(1))
+    ASSERT_EQUAL(1, ZZ_DECODE(2))
+    ASSERT_EQUAL(-2, ZZ_DECODE(3))
+    ASSERT_EQUAL(2147483647, ZZ_DECODE(4294967294))
+    ASSERT_EQUAL(-2147483648, ZZ_DECODE(4294967295))
+}
+
 int main()
 {
-    test_varint();
+    //test_varint();
+    test_zigzag();
 
     printf("Tests passed: %d assertions run.\n", pass);
     exit(0);

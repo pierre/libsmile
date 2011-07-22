@@ -23,7 +23,7 @@ long zzvarint_decode(u8 **msg)
 
 unsigned long varint_decode(u8 **msg)
 {
-    long x = 0;
+    unsigned long x = 0;
     while(!(**msg & 0x80)) {
         x <<= 7;
         x |= **msg;

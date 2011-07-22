@@ -16,9 +16,14 @@
 
 #include "smile_utils.h"
 
+inline long zz_decode(unsigned long n)
+{
+    return ((n >> 1) ^ (-(n & 1)));
+}
+
 long zzvarint_decode(u8 **msg)
 {
-    return ZZ_DECODE(varint_decode(msg));
+    return zz_decode(varint_decode(msg));
 }
 
 unsigned long varint_decode(u8 **msg)

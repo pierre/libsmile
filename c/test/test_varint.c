@@ -43,17 +43,17 @@ void test_number_encoding()
     // 0x 0111 1100 1010 0000
     //     111 1100  010 0000
     //      11 1110 0010 0000
-    ASSERT_EQUAL(8080, ZZ_DECODE(varint_decode_buffer(&buf)));
+    ASSERT_EQUAL(8080, zz_decode(varint_decode_buffer(&buf)));
 }
 
 void test_zigzag()
 {
-    ASSERT_EQUAL(0, ZZ_DECODE(0))
-    ASSERT_EQUAL(-1, ZZ_DECODE(1))
-    ASSERT_EQUAL(1, ZZ_DECODE(2))
-    ASSERT_EQUAL(-2, ZZ_DECODE(3))
-    ASSERT_EQUAL(2147483647, ZZ_DECODE(4294967294))
-    ASSERT_EQUAL(-2147483648, ZZ_DECODE(4294967295))
+    ASSERT_EQUAL(0, zz_decode(0))
+    ASSERT_EQUAL(-1, zz_decode(1))
+    ASSERT_EQUAL(1, zz_decode(2))
+    ASSERT_EQUAL(-2, zz_decode(3))
+    ASSERT_EQUAL(2147483647, zz_decode(4294967294))
+    ASSERT_EQUAL(-2147483648, zz_decode(4294967295))
 }
 
 void test_varint()

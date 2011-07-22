@@ -3,8 +3,7 @@
 
 #include "api.h"
 
-#define ZZ_DECODE(n) ((n >> 1) ^ (-(n & 1)))
-
+inline long zz_decode(unsigned long);
 long zzvarint_decode(u8**);
 unsigned long varint_decode(u8**);
 unsigned long varint_decode_buffer(u8*);

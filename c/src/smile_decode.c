@@ -210,7 +210,7 @@ void smile_decode_value(u8** orig_data, struct content_handler* handler)
         handler->start_value();
         (*orig_data)++;
         ip++;
-        handler->number_value(ZZ_DECODE(*ip & 0x1F));
+        handler->number_value(zz_decode(*ip & 0x1F));
         handler->end_value();
     // Misc; binary / text / structure markers
     } else {

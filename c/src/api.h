@@ -1,5 +1,5 @@
-#ifndef _API_H_
-#define _API_H_
+#ifndef _SMILE_API_H_
+#define _SMILE_API_H_
 
 typedef unsigned char u8;
 

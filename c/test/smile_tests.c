@@ -32,6 +32,7 @@ int main()
     test_varint();
     test_zigzag();
     test_decode();
+    test_header();
 
     end = clock();
     printf("Tests run: %d, Time elapsed: %f sec\n", 3, ((double) (end - start)) / CLOCKS_PER_SEC);

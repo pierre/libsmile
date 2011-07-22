@@ -24,14 +24,6 @@
 
 static int pass = 0;
 
-#define ASSERT_EQUAL(expected, actual) \
-    if (expected != actual) { \
-        fprintf (stderr, "Test failure: expected %d, got %d\n", expected, actual); \
-        exit(1); \
-    } else { \
-        pass++; \
-    }
-
 void test_number_encoding()
 {
     u8 buf[3];

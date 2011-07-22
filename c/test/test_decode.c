@@ -25,14 +25,6 @@
 
 static int pass = 0;
 
-#define ASSERT_EQUAL(expected, actual) \
-    if (expected != actual) { \
-        fprintf (stderr, "Test failure: expected %d (%c), got %d (%c)\n", expected, expected, actual, actual); \
-        exit(1); \
-    } else { \
-        pass++; \
-    }
-
 /*
  * {
  *   "eventDate": 1311225160270,

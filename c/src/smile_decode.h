@@ -1,5 +1,5 @@
-#ifndef _SMILE_H_
-#define _SMILE_H_
+#ifndef _SMILE_DECODE_H_
+#define _SMILE_DECODE_H_
 
 #include "api.h"
 
@@ -21,9 +21,19 @@
 #define SMILE_START_OBJECT (u8) 0xFA
 #define SMILE_END_OBJECT (u8) 0xFB
 
-int smile_decode_header(u8*);
+struct smile_header {
+    // Whether the header is valid
+    int valid;
+
+    int version;
+    int raw_binary;
+    int shared_key_names;
+    int shared_value_names;
+};
+
+struct smile_header smile_decode_header(u8*);
 void smile_decode_key(u8**, struct content_handler*);
 void smile_decode_value(u8**, struct content_handler*);
 void smile_decode(u8*, int, struct content_handler*);
 
-#endif /* !_SMILE_H_ */
+#endif /* !_SMILE_DECODE_H_ */

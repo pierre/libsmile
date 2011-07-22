@@ -138,7 +138,7 @@ int main(int argc, char *argv[])
           perror ("");
           goto exit;
     } else {
-        if (!smile_decode_header(header)) {
+        if (!smile_decode_header(header).valid) {
             fprintf(stderr, "%s: bad header: %s\n", fname, header);
             goto exit;
         } else {

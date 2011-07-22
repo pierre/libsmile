@@ -26,6 +26,9 @@
 #include "smile_decode.h"
 #include "smile_utils.h"
 
+/* By default, shared keys are enabled, but not values */
+const struct smile_header DEFAULT_SMILE_HEADER = {0, 0, 1, 1, 0};
+
 void smile_decode_key(u8** orig_data, struct content_handler* handler)
 {
     int length = 0;
@@ -229,9 +232,27 @@ void smile_decode_value(u8** orig_data, struct content_handler* handler)
     }
 }
 
-int smile_decode_header(u8* header)
+struct smile_header smile_decode_header(u8* raw_header)
 {
-    return (header[0] == ':' && header[1] == ')' && header[2] == '\n');
+    struct smile_header header = DEFAULT_SMILE_HEADER;
+
+    header.valid = (raw_header[0] == ':' && raw_header[1] == ')' && raw_header[2] == '\n');
+
+    // Optional properties
+    u8 options = raw_header[3];
+
+    // 0x00 for current version
+    header.version = (options & 0xF0);
+
+    // Whether raw binary (unescaped 8-bit) values may be present in content
+    header.raw_binary = (options & 0x04) >> 2;
+
+    // Shared String key
+    header.shared_key_names = (options & 0x01);
+    // Shared String value
+    header.shared_value_names = (options & 0x02) >> 1;
+
+    return header;
 }
 
 void smile_decode(u8* orig_data, int nbytes, struct content_handler* handler)

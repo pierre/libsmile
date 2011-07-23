@@ -25,7 +25,10 @@ inline void print_start_object()
 
 inline void print_end_object()
 {
+    indent -= 2;
+    INDENT
     putchar('}');
+    putchar('\n');
 }
 
 inline void print_start_array()

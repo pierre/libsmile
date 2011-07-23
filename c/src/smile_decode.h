@@ -3,6 +3,12 @@
 
 #include "api.h"
 
+#ifdef DEBUG
+#define dprintf   printf
+#else
+#define dprintf(fmt, ...)   ((void)(0))
+#endif
+
 #define DEBUG_BYTE(byte) printf("0x%02x ", (u8) byte);
 
 #define SUCCESS 0
@@ -10,7 +16,7 @@
 #define BUFFER_SIZE 1024
 
 // Smile Tokens
-#define SMILE_EOS (u8) 0xFF
+#define SMILE_EOS (u8) 0xFE
 #define SMILE_EMPTY_STRING (u8) 0x20
 #define SMILE_NULL (u8) 0x21
 #define SMILE_TRUE (u8) 0x22
@@ -32,8 +38,8 @@ struct smile_header {
 };
 
 struct smile_header smile_decode_header(u8*);
-void smile_decode_key(u8**, struct content_handler*);
-void smile_decode_value(u8**, struct content_handler*);
+int smile_decode_key(u8**, struct content_handler*);
+int smile_decode_value(u8**, struct content_handler*);
 void smile_decode(u8*, int, struct content_handler*);
 
 #endif /* !_SMILE_DECODE_H_ */

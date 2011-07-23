@@ -24,12 +24,13 @@
 #include <string.h>
 
 #include "smile_decode.h"
+#include "smile_backrefs.h"
 #include "smile_utils.h"
 
 /* By default, shared keys are enabled, but not values */
 const struct smile_header DEFAULT_SMILE_HEADER = {0, 0, 1, 1, 0};
 
-void smile_decode_key(u8** orig_data, struct content_handler* handler)
+int smile_decode_key(u8** orig_data, struct content_handler* handler)
 {
     int length = 0;
     const u8* ip = *orig_data;
@@ -48,11 +49,34 @@ void smile_decode_key(u8** orig_data, struct content_handler* handler)
         // "Long" shared key name reference
         handler->start_key();
         (*orig_data)++;
+        ip++;
+
+        // 2 bytes lookup
+        char* decoded_key = lookup_short_shared_key(*orig_data);
+        (*orig_data) += 2;
+        ip++;
+        handler->characters(decoded_key, 0, strlen(decoded_key));
+
         handler->end_key();
     } else if (*ip == 0x32) {
         // Long (not-yet-shared) Unicode name
         handler->start_key();
         (*orig_data)++;
+        ip++;
+
+        // 64 bytes or more
+        int length = 0;
+        while (**orig_data != SMILE_EOS) {
+            length++;
+        }
+
+        if (length < 64) {
+            fprintf(stderr, "Long (not-yet-shared) Unicode name should be greater than 63\n");
+            exit(1);
+        } else {
+            handler->characters(ip, 0, length);
+        }
+
         handler->end_key();
     } else if (*ip >= 0x35 && *ip <= 0x39) {
         // Reserved for future use
@@ -66,7 +90,12 @@ void smile_decode_key(u8** orig_data, struct content_handler* handler)
     } else if (*ip >= 0x40 && *ip <= 0x7F) {
         // "Short" shared key name reference
         handler->start_key();
+
+        // 1 byte lookup
+        char* decoded_key = lookup_short_shared_key(*orig_data);
         (*orig_data)++;
+        handler->characters(decoded_key, 0, strlen(decoded_key));
+
         handler->end_key();
     } else if (*ip >= 0x80 && *ip <= 0xBF) {
         // Short Ascii names
@@ -77,6 +106,8 @@ void smile_decode_key(u8** orig_data, struct content_handler* handler)
         ip++;
 
         handler->characters(ip, 0, length);
+        save_key_string(ip, length);
+
         handler->end_key();
     } else if (*ip >= 0xC0 && *ip <= 0xF7) {
         // Short Unicode names
@@ -87,21 +118,29 @@ void smile_decode_key(u8** orig_data, struct content_handler* handler)
         ip++;
 
         handler->characters(ip, 0, length);
+        save_key_string(ip, length);
+
         handler->end_key();
     } else if (*ip >= 0xF8 && *ip <= 0xFA) {
         // Reserved
+        // TODO?
+        handler->start_object();
         (*orig_data)++;
+        return 0;
     } else if (*ip == 0xFB) {
         // END_OBJECT marker
         handler->end_object();
         (*orig_data)++;
+        return 0;
     } else if (*ip >= 0xFC) {
         // Reserved
         (*orig_data)++;
     }
+
+    return 1;
 }
 
-void smile_decode_value(u8** orig_data, struct content_handler* handler)
+int smile_decode_value(u8** orig_data, struct content_handler* handler)
 {
     int length = 0;
     u8* ip = *orig_data;
@@ -230,6 +269,8 @@ void smile_decode_value(u8** orig_data, struct content_handler* handler)
         }
         (*orig_data)++;
     }
+
+    return 1;
 }
 
 struct smile_header smile_decode_header(u8* raw_header)
@@ -259,7 +300,10 @@ void smile_decode(u8* orig_data, int nbytes, struct content_handler* handler)
 {
     u8* ip = orig_data;
     while (nbytes--) {
-        smile_decode_key((u8**) &ip, handler);
-        smile_decode_value((u8**) &ip, handler);
+        dprintf("Decoding key\n");
+        if (smile_decode_key((u8**) &ip, handler)) {
+            dprintf("Decoding value\n");
+            smile_decode_value((u8**) &ip, handler);
+        }
     }
 }

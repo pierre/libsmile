@@ -1,0 +1,10 @@
+Document: smile-doc
+Title: Smile Documentation
+Author: Pierre-Alexandre Meyer
+Abstract: Smile is codename for an efficient JSON-compatible binary data format.
+ This manual describes the C API.
+Section: Programming
+
+Format: HTML
+Index: /usr/share/doc/smile-doc/doc/index.html
+Files: /usr/share/doc/smile-doc/doc/*

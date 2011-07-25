@@ -1,0 +1,57 @@
+Source: libsmile
+Section: utils
+Priority: optional
+Maintainer: Pierre-Alexandre Meyer <pierre@mouraf.org>
+Build-Depends: debhelper (>= 7.4.15), libtool
+Standards-Version: 3.9.2
+Homepage: http://github.com/pierre/libsmile
+
+Package: smile-doc
+Architecture: all
+Section: doc
+Depends: ${misc:Depends}
+Description: Documentation for the Smile codec library
+ Smile is codename for an efficient JSON-compatible binary data format.
+ .
+ This package contains the official manual covering the C API, examples, etc.
+
+Package: smile
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}
+Description: Smile codec and decodec utility
+ Smile is codename for an efficient JSON-compatible binary data format.
+ .
+ This package contains the Smile command line too to encode and decode Smile
+ files.
+
+Package: libsmile-0-dev
+Provides: libsmile-dev
+Conflicts: libsmile-dev
+Architecture: any
+Depends: libsmile-0 (= ${binary:Version}), libc6-dev|libc-dev, ${misc:Depends}
+Recommends: pkg-config, libtool
+Section: libdevel
+Description: Development files for the Smile codec library
+ Smile is codename for an efficient JSON-compatible binary data format.
+ .
+ This package contains developer resources for using the Smile library.
+ Install it if you are developing programs which use the Smile C API.
+
+Package: libsmile-0
+Architecture: any
+Pre-Depends: ${misc:Pre-Depends}
+Depends: ${shlibs:Depends}, ${misc:Depends}
+Section: libs
+Description: Shared library for the Smile codec library
+ Smile is codename for an efficient JSON-compatible binary data format.
+ .
+ This package contains runtime libraries for using the Smile codec library.
+
+Package: libsmile-0-dbg
+Architecture: any
+Depends: ${shlibs:Depends}, libsmile-0 (= ${binary:Version}), ${misc:Depends}
+Section: debug
+Priority: extra
+Description: Debug symbols for the Smile codec library
+ This package contains the debugging symbols for libsmile and smile
+

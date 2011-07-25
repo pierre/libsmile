@@ -4,7 +4,7 @@ AC_INIT([libsmile], [0.1], [pierre@mouraf.org])
 AM_INIT_AUTOMAKE([-Wall -Werror])
 AC_LANG_WERROR
 
-AC_CONFIG_SRCDIR([src], [test])
+AC_CONFIG_SRCDIR([doc], [src], [test])
 AC_CONFIG_HEADERS([config.h])
 AC_CONFIG_MACRO_DIR([m4])
 
@@ -25,5 +25,5 @@ AC_TYPE_SSIZE_T
 
 # Checks for library functions.
 
-AC_CONFIG_FILES([Makefile src/Makefile test/Makefile])
+AC_CONFIG_FILES([Makefile doc/Makefile src/Makefile test/Makefile])
 AC_OUTPUT

@@ -1,0 +1,7 @@
+#!/bin/sh
+last="$1"
+new="$2"
+echo "# git tag v$new"
+echo "cd c/ && git archive --prefix=libsmile-$new/ v$new | gzip -9 > ../libsmile_$new.orig.tar.gz && cd -"
+echo "git log --no-merges v$new ^v$last > doc/ChangeLog-$new"
+echo "git shortlog --no-merges v$new ^v$last > doc/ShortLog-$new"

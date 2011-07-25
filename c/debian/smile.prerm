@@ -1,0 +1,9 @@
+#!/bin/sh -e
+
+case "$1" in
+    remove)
+        update-alternatives --remove smile /usr/bin/smile
+        ;;
+esac
+
+#DEBHELPER#

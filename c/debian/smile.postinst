@@ -1,0 +1,12 @@
+#!/bin/sh -e
+
+case "$1" in
+    configure)
+        update-alternatives \
+            --install /usr/bin/smile smile /usr/bin/smile 110 \
+            --slave /usr/share/man/man1/smile.1.gz smile-manual \
+                /usr/share/man/man1/smile.1.gz
+        ;;
+esac
+
+#DEBHELPER#

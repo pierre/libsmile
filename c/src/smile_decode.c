@@ -49,12 +49,10 @@ int smile_decode_key(u8** orig_data, struct content_handler* handler)
         // "Long" shared key name reference
         handler->start_key();
         (*orig_data)++;
-        ip++;
 
         // 2 bytes lookup
         char* decoded_key = lookup_short_shared_key(*orig_data);
         (*orig_data) += 2;
-        ip++;
         handler->characters(decoded_key, 0, strlen(decoded_key));
 
         handler->end_key();
@@ -68,6 +66,7 @@ int smile_decode_key(u8** orig_data, struct content_handler* handler)
         int length = 0;
         while (**orig_data != SMILE_EOS) {
             length++;
+            (*orig_data)++;
         }
 
         if (length < 64) {
@@ -148,8 +147,11 @@ int smile_decode_value(u8** orig_data, struct content_handler* handler)
     if (*ip >= 0x01 && *ip <= 0x1f) {
         // Reference value
         handler->start_value();
-        length = (*ip & 0xF8);
+
+        char* decoded_value = lookup_short_shared_value(*orig_data);
         (*orig_data)++;
+        handler->characters(decoded_value, 0, strlen(decoded_value));
+
         handler->end_value();
     } else if (*ip >= 0x20 && *ip <= 0x23) {
         handler->start_value();
@@ -216,16 +218,20 @@ int smile_decode_value(u8** orig_data, struct content_handler* handler)
         ip++;
 
         handler->characters(ip, 0, length);
+        save_value_string(ip, length);
+
         handler->end_value();
     // Small ASCII
     } else if (*ip >= 0x60 && *ip <= 0x7F) {
         // 5 LSB used to indicate lengths from 33 to 64 (bytes == chars)
         handler->start_value();
-        length = (*ip & 0x1F) + 32;
+        length = (*ip & 0x1F) + 33;
         (*orig_data) += 1 + length;
         ip++;
 
         handler->characters(ip, 0, length);
+        save_value_string(ip, length);
+
         handler->end_value();
     // Tiny Unicode
     } else if (*ip >= 0x80 && *ip <= 0x9F) {
@@ -236,6 +242,8 @@ int smile_decode_value(u8** orig_data, struct content_handler* handler)
         ip++;
 
         handler->characters(ip, 0, length);
+        save_value_string(ip, length);
+
         handler->end_value();
     // Small Unicode
     } else if (*ip >= 0xA0 && *ip <= 0xBF) {
@@ -246,6 +254,8 @@ int smile_decode_value(u8** orig_data, struct content_handler* handler)
         ip++;
 
         handler->characters(ip, 0, length);
+        save_value_string(ip, length);
+
         handler->end_value();
     // Small integers
     } else if (*ip >= 0xC0 && *ip <= 0xDF) {
@@ -256,18 +266,64 @@ int smile_decode_value(u8** orig_data, struct content_handler* handler)
         handler->end_value();
     // Misc; binary / text / structure markers
     } else {
-        if (*ip == SMILE_START_OBJECT) {
+        if (*ip >= 0xE0 && *ip < 0xE4) {
+            handler->start_value();
+            (*orig_data)++;
+            ip++;
+
+            // Long (variable length) ASCII text
+            length = 0;
+            // Smile EOS is either 0xFC or 0xFE?
+            while (**orig_data != 0xFC) {
+                length++;
+                (*orig_data)++;
+            }
+            handler->characters(ip, 0, length);
+
+            handler->end_value();
+        } else if (*ip >= 0xE4 && *ip < 0xE8) {
+            // Long (variable length) Unicode text
+             handler->start_value();
+            (*orig_data)++;
+            ip++;
+
+            // Long (variable length) ASCII text
+            length = 0;
+            // Smile EOS is either 0xFC or 0xFE?
+            while (**orig_data != 0xFC) {
+                length++;
+                (*orig_data)++;
+            }
+            handler->characters(ip, 0, length);
+
+            handler->end_value();
+        } else if (*ip >= 0xE8 && *ip < 0xEC) {
+            // Shared String reference, long
+            handler->start_value();
+
+            char* decoded_key = lookup_long_shared_key(*orig_data);
+            (*orig_data)++;
+            handler->characters(decoded_key, 0, strlen(decoded_key));
+
+            handler->end_value();
+        } else if (*ip >= 0xEC && *ip < 0xF8) {
+            // Binary, 7-bit encoded
+            (*orig_data)++;
+        } else if (*ip == SMILE_START_OBJECT) {
             handler->start_object();
+            (*orig_data)++;
         } else if (*ip == SMILE_END_OBJECT) {
             handler->end_object();
+            (*orig_data)++;
         } else if  (*ip == SMILE_START_ARRAY) {
             handler->start_array();
+            (*orig_data)++;
         } else if (*ip == SMILE_END_ARRAY) {
             handler->end_array();
+            (*orig_data)++;
         } else {
                 // TODO
         }
-        (*orig_data)++;
     }
 
     return 1;

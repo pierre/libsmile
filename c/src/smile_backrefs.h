@@ -10,4 +10,8 @@ char* lookup_short_shared_key(const u8*);
 char* lookup_long_shared_key(const u8*);
 void save_key_string(const u8*, size_t);
 
+char* lookup_short_shared_value(const u8*);
+char* lookup_long_shared_value(const u8*);
+void save_value_string(const u8*, size_t);
+
 #endif

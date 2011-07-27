@@ -25,6 +25,9 @@
 static char keys_tables[KEYS_BUFFER_SIZE][MAX_SHAREABLE_STRING_LENGTH + 1];
 static short max_keys_ref_value = -1;
 
+static char values_tables[VALUES_BUFFER_SIZE][MAX_SHAREABLE_STRING_LENGTH + 1];
+static short max_values_ref_value = -1;
+
 static short decode_short_shared_key_reference(u8* ip)
 {
     return *ip - 0x40;
@@ -52,14 +55,14 @@ static short decode_long_shared_key_reference(const u8* orig)
 char* lookup_short_shared_key(const u8* ip)
 {
     short idx = decode_short_shared_key_reference(ip);
-    dprintf("Decoded short shared key #%d", idx);
+    dprintf("Decoded short shared key #%d\n", idx);
     return keys_tables[idx];
 }
 
 char* lookup_long_shared_key(const u8* ip)
 {
     short idx = decode_long_shared_key_reference(ip);
-    dprintf("Decoded long shared key #%d", idx);
+    dprintf("Decoded long shared key #%d\n", idx);
     return keys_tables[idx];
 }
 
@@ -68,4 +71,52 @@ void save_key_string(const u8* ip, size_t length)
     max_keys_ref_value++;
     strncpy(keys_tables[max_keys_ref_value], ip, length);
     keys_tables[max_keys_ref_value][length] = '\0';
+    dprintf("\nSaved shared key [%s] at #%d\n", keys_tables[max_keys_ref_value], max_keys_ref_value);
+}
+
+static short decode_short_shared_value_reference(u8* ip)
+{
+    // Error in spec? Says 5 MSB used to get reference value of 1 - 31
+    return *ip;// & 0xF8;
+}
+
+static short decode_long_shared_value_reference(const u8* orig)
+{
+    u8* ip = orig;
+    // 2 LSBs of the first byte are used as 2 MSB of 10-bit reference
+    short lookup = (*ip & 0x03) << 8;
+
+    // Second byte used for 8 LSB
+    ip++;
+    lookup || (*ip >> 8);
+
+    if (lookup <= 0x3F) {
+        // Invalid
+        fprintf(stderr, "Long shared value name reference should be greater than 63\n");
+        exit(1);
+    }
+
+    return lookup;
+}
+
+char* lookup_short_shared_value(const u8* ip)
+{
+    short idx = decode_short_shared_value_reference(ip);
+    dprintf("Decoded short shared value #%d\n", idx);
+    return values_tables[idx - 1];
+}
+
+char* lookup_long_shared_value(const u8* ip)
+{
+    short idx = decode_long_shared_value_reference(ip);
+    dprintf("Decoded long shared value #%d\n", idx);
+    return values_tables[idx - 1];
+}
+
+void save_value_string(const u8* ip, size_t length)
+{
+    max_values_ref_value++;
+    strncpy(values_tables[max_values_ref_value], ip, length);
+    values_tables[max_values_ref_value][length] = '\0';
+    dprintf("\nSaved shared value [%s] at #%d\n", values_tables[max_values_ref_value], max_values_ref_value);
 }

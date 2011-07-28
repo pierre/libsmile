@@ -8,4 +8,6 @@ long zzvarint_decode(u8**);
 unsigned long varint_decode(u8**);
 unsigned long varint_decode_buffer(u8*);
 
+int quote(const u8*, int, u8**);
+
 #endif

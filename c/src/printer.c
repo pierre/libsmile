@@ -19,9 +19,15 @@
 static int pretty_print = 0;
 static int indent = 0;
 
+// API: Should we pass the full parser_context object instead?
+static int first_object = 1;
+static int first_value_in_object = 1;
+
 inline void print_start_object()
 {
-    if (pretty_print) {
+    first_value_in_object = 1;
+
+    if (pretty_print && !first_object) {
         INDENT
     }
     putchar('{');
@@ -29,6 +35,8 @@ inline void print_start_object()
         putchar('\n');
         indent += 2;
     }
+
+    first_object = 0;
 }
 
 inline void print_end_object()
@@ -36,6 +44,7 @@ inline void print_end_object()
     if (pretty_print) {
         indent -= 2;
         INDENT
+        putchar('\n');
     }
     putchar('}');
     if (pretty_print) {
@@ -63,6 +72,13 @@ inline void print_end_array()
 
 inline void print_start_key()
 {
+    if (!first_value_in_object) {
+        putchar(',');
+        if (pretty_print) {
+            putchar('\n');
+        }
+    }
+
     if (pretty_print) {
         INDENT
     }
@@ -82,10 +98,6 @@ inline void print_start_value()
 
 inline void print_end_value()
 {
-    putchar(',');
-    if (pretty_print) {
-        putchar('\n');
-    }
 }
 
 inline void print_null_value()
@@ -110,6 +122,9 @@ inline void print_number_value(long number)
 
 void print_string(const u8* ch, int start, int length)
 {
+    u8* quoted;
+    int quoted_length;
+
     putchar('"');
 
     // Convert byte[] to string
@@ -120,13 +135,15 @@ void print_string(const u8* ch, int start, int length)
     strncpy(ch_string, ch, length);
     ch_string[length] = '\0';
 
+    // Quote special characters
+    quoted_length = quote(ch_string, length + 1, &quoted);
+
     // Convert to wide characters
-    wchar_t* ip = (wchar_t*) malloc((length + 1) * sizeof(u8));
+    wchar_t* ip = (wchar_t*) malloc(quoted_length * sizeof(u8));
     if (ip == NULL) {
         return;
     }
-    strncpy(ch_string, ch, length);
-    mbstowcs(ip, ch_string, length + 1);
+    mbstowcs(ip, quoted, quoted_length);
 
     int utf8 = 1;
     /* 0 queries the current mode */
@@ -149,6 +166,8 @@ void print_string(const u8* ch, int start, int length)
     free(ch_string);
     free(ip);
     putchar('"');
+
+    first_value_in_object = 0;
 }
 
 struct content_handler printer = {

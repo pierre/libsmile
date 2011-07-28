@@ -46,3 +46,27 @@ unsigned long varint_decode_buffer(u8* input)
     u8* msg = input;
     varint_decode(&msg);
 }
+
+// Big enough?
+u8 quoted[1024];
+
+int quote(const u8* before, int length, u8** after)
+{
+    int i = 0;
+    int j = 0;
+    for (i = 0; i < length; i++) {
+        switch (before[i]) {
+            case '"':
+            case '\\':
+                quoted[j] = '\\';
+                j++;
+                // Fall through.
+            default:
+                quoted[j] = before[i];
+                j++;
+        }
+    }
+
+    *after = quoted;
+    return j;
+}

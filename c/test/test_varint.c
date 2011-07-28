@@ -36,6 +36,11 @@ void test_number_encoding()
     //     111 1100  010 0000
     //      11 1110 0010 0000
     ASSERT_EQUAL(8080, zz_decode(varint_decode_buffer(&buf)));
+
+    buf[0] = 0x0A;
+    buf[1] = 0x85;
+    buf[2] = 0x80;
+    ASSERT_EQUAL(-323, zz_decode(varint_decode_buffer(&buf)));
 }
 
 void test_zigzag()

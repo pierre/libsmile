@@ -1,6 +1,7 @@
 #include <errno.h>
 #include <fcntl.h>
 #include <getopt.h>
+#include <locale.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -110,10 +111,43 @@ inline void print_number_value(long number)
 void print_string(const u8* ch, int start, int length)
 {
     putchar('"');
-    const u8* ip = ch + start;
-    while (length--) {
-        putchar(*ip++);
+
+    // Convert byte[] to string
+    u8* ch_string = (u8*) malloc((length + 1) * sizeof(u8));
+    if (ch_string == NULL) {
+        return;
     }
+    strncpy(ch_string, ch, length);
+    ch_string[length] = '\0';
+
+    // Convert to wide characters
+    wchar_t* ip = (wchar_t*) malloc((length + 1) * sizeof(u8));
+    if (ip == NULL) {
+        return;
+    }
+    strncpy(ch_string, ch, length);
+    mbstowcs(ip, ch_string, length + 1);
+
+    int utf8 = 1;
+    /* 0 queries the current mode */
+    if (fwide(stdout, 0) == 0) {
+        /* stdout has no specific char mode yet, attempt to set to wide */
+        if (fwide(stdout, 1) <= 0) {
+            /* a value greater than zero switches to wide character mode */
+            utf8 = 0;
+        }
+    }
+
+    if (!utf8) {
+        while (length--) {
+            putchar(*ip++);
+        }
+    } else {
+        wprintf(L"%ls", ip);
+    }
+
+    free(ch_string);
+    free(ip);
     putchar('"');
 }
 
@@ -159,8 +193,13 @@ int main(int argc, char *argv[])
         }
     }
 
-    nbytes = sizeof(buf);
+    if (!setlocale(LC_CTYPE, "en_US.UTF-8")) {
+        fprintf(stderr, "Can't set the specified locale! "
+                "Check LANG, LC_CTYPE, LC_ALL.\n");
+        exit(1);
+    }
 
+    nbytes = sizeof(buf);
     rc = stat(fname, &mystat);
     fd = open(fname, O_RDONLY);
 

@@ -153,10 +153,10 @@ int smile_decode_key(u8** orig_data, struct content_handler* handler)
         ctxt.jsonToken = JSON_TOKEN_FIELD_NAME;
     } else if (*ip >= 0xC0 && *ip <= 0xF7) {
         // Short Unicode names
-        // 5 LSB used to indicate lengths from 1 to 32 (bytes == chars)
+        // 5 LSB used to indicate lengths from 2 to 57
         handler->start_key();
-        length = (*ip & 0x1F);
-        (*orig_data) += length;
+        length = (*ip - 0xC0) + 2;
+        (*orig_data) += 1 + length;
         ip++;
 
         handler->characters(ip, 0, length);
@@ -382,7 +382,10 @@ int smile_decode_value(u8** orig_data, struct content_handler* handler)
             (*orig_data)++;
             struct parser_context* old_ctxt = &ctxt;
             ctxt = *ctxt.parent;
-            free(old_ctxt);
+            // TODO
+            //if (old_ctxt != NULL) {
+            //    free(old_ctxt);
+            //}
         } else if  (*ip == SMILE_START_ARRAY) {
             handler->start_array();
             (*orig_data)++;
@@ -404,7 +407,10 @@ int smile_decode_value(u8** orig_data, struct content_handler* handler)
             (*orig_data)++;
             struct parser_context* old_ctxt = &ctxt;
             ctxt = *ctxt.parent;
-            free(old_ctxt);
+            // TODO
+            //if (old_ctxt != NULL) {
+            //    free(old_ctxt);
+            //}
         } else {
                 // TODO
         }

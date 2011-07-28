@@ -1,5 +1,6 @@
 #include <errno.h>
 #include <fcntl.h>
+#include <getopt.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -13,47 +14,65 @@
 
 #define INDENT printf("%-*s", indent, " ");
 
+// Don't pretty print by default
+static int pretty_print = 0;
 static int indent = 0;
 
 inline void print_start_object()
 {
-    INDENT
+    if (pretty_print) {
+        INDENT
+    }
     putchar('{');
-    putchar('\n');
-    indent += 2;
+    if (pretty_print) {
+        putchar('\n');
+        indent += 2;
+    }
 }
 
 inline void print_end_object()
 {
-    indent -= 2;
-    INDENT
+    if (pretty_print) {
+        indent -= 2;
+        INDENT
+    }
     putchar('}');
-    putchar('\n');
+    if (pretty_print) {
+        putchar('\n');
+    }
 }
 
 inline void print_start_array()
 {
-    INDENT
-    printf("bleh");
     putchar('[');
-    putchar('\n');
-    indent += 2;
+    if (pretty_print) {
+        putchar('\n');
+        indent += 2;
+    }
 }
 
 inline void print_end_array()
 {
     putchar(']');
+    if (pretty_print) {
+        putchar('\n');
+        indent += 2;
+    }
 }
 
 inline void print_start_key()
 {
-    INDENT
+    if (pretty_print) {
+        INDENT
+    }
 }
 
 inline void print_end_key()
 {
     putchar(':');
-    putchar(' ');
+    if (pretty_print) {
+       putchar(' ');
+    }
 }
 
 inline void print_start_value()
@@ -63,12 +82,14 @@ inline void print_start_value()
 inline void print_end_value()
 {
     putchar(',');
-    putchar('\n');
+    if (pretty_print) {
+        putchar('\n');
+    }
 }
 
 inline void print_null_value()
 {
-    printf("(null)");
+    printf("null");
 }
 
 inline void print_false_value()
@@ -123,6 +144,20 @@ int main(int argc, char *argv[])
     ssize_t bytes_read;
     u8 buf[BUFFER_SIZE];
     u8 header[4];
+    int pretty = 0;
+    static const struct option opts[] =
+    {
+        { "pretty", no_argument, NULL, 'p' },
+        { NULL,     no_argument, NULL, '\0'}
+    };
+
+    int c;
+    while ((c = getopt_long (argc, argv, "p", opts, NULL)) != -1) {
+        switch (c) {
+            case 'p':
+                pretty_print = 1;
+        }
+    }
 
     nbytes = sizeof(buf);
 
@@ -145,7 +180,7 @@ int main(int argc, char *argv[])
             fprintf(stderr, "%s: bad header: %s\n", fname, header);
             goto exit;
         } else {
-            printf("Got header: %s", header);
+            dprintf("Got header: %s", header);
         }
     }
 
@@ -160,12 +195,11 @@ int main(int argc, char *argv[])
             break;
         }
 
-        fprintf(stderr, "Read %lu bytes\n", (unsigned long int) bytes_read);
         smile_decode(buf, nbytes, &printer);
    }
 
 exit:
     close(fd);
-    puts("Done!");
+    dprintf("Done!");
     exit(0);
 }

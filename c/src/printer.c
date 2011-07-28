@@ -117,7 +117,7 @@ inline void print_true_value()
 
 inline void print_number_value(long number)
 {
-    printf("%lu", number);
+    printf("%ld", number);
 }
 
 void print_string(const u8* ch, int start, int length)

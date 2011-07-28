@@ -30,6 +30,34 @@
 /* By default, shared keys are enabled, but not values */
 const struct smile_header DEFAULT_SMILE_HEADER = {0, 0, 1, 1, 0};
 
+const struct parser_context DEFAULT_PARSER_CONTEXT = {NULL, NULL, "", -1, CONTEXT_UNKNOWN, JSON_TOKEN_NOT_AVAILABLE};
+
+static struct parser_context ctxt;
+
+static void jsonPath(char* str, struct parser_context* ctxt)
+{
+    switch (ctxt->contextType) {
+        case (CONTEXT_ROOT):
+            strcpy(str, "/");
+        case (CONTEXT_ARRAY):
+            strcpy(str, "[");
+            //strcat(str, ctxt->location);
+            strcat(str, "]");
+        case (CONTEXT_OBJECT):
+            strcpy(str, "{");
+            if (ctxt->name != NULL) {
+                strcat(str, "\"");
+                strcat(str, ctxt->name);
+                strcat(str, "\"");
+            } else {
+                strcat(str, "?");
+            }
+            strcat(str, "}");
+        default:
+            strcpy(str, "");
+    }
+}
+
 int smile_decode_key(u8** orig_data, struct content_handler* handler)
 {
     int length = 0;
@@ -42,6 +70,9 @@ int smile_decode_key(u8** orig_data, struct content_handler* handler)
         handler->start_key();
         (*orig_data)++;
         handler->end_key();
+
+        strcpy(ctxt.name, "");
+        ctxt.jsonToken = JSON_TOKEN_FIELD_NAME;
     } else if (*ip >= 0x21 && *ip <= 0x2F) {
         // Reserved for future use
         (*orig_data)++;
@@ -56,6 +87,9 @@ int smile_decode_key(u8** orig_data, struct content_handler* handler)
         handler->characters(decoded_key, 0, strlen(decoded_key));
 
         handler->end_key();
+
+        strcpy(ctxt.name, decoded_key);
+        ctxt.jsonToken = JSON_TOKEN_FIELD_NAME;
     } else if (*ip == 0x32) {
         // Long (not-yet-shared) Unicode name
         handler->start_key();
@@ -77,6 +111,9 @@ int smile_decode_key(u8** orig_data, struct content_handler* handler)
         }
 
         handler->end_key();
+
+        strncpy(ctxt.name, ip, length);
+        ctxt.jsonToken = JSON_TOKEN_FIELD_NAME;
     } else if (*ip >= 0x35 && *ip <= 0x39) {
         // Reserved for future use
         (*orig_data)++;
@@ -96,6 +133,9 @@ int smile_decode_key(u8** orig_data, struct content_handler* handler)
         handler->characters(decoded_key, 0, strlen(decoded_key));
 
         handler->end_key();
+
+        strcpy(ctxt.name, decoded_key);
+        ctxt.jsonToken = JSON_TOKEN_FIELD_NAME;
     } else if (*ip >= 0x80 && *ip <= 0xBF) {
         // Short Ascii names
         // 5 LSB used to indicate lengths from 2 to 32 (bytes == chars)
@@ -108,6 +148,9 @@ int smile_decode_key(u8** orig_data, struct content_handler* handler)
         save_key_string(ip, length);
 
         handler->end_key();
+
+        strncpy(ctxt.name, ip, length);
+        ctxt.jsonToken = JSON_TOKEN_FIELD_NAME;
     } else if (*ip >= 0xC0 && *ip <= 0xF7) {
         // Short Unicode names
         // 5 LSB used to indicate lengths from 1 to 32 (bytes == chars)
@@ -120,17 +163,16 @@ int smile_decode_key(u8** orig_data, struct content_handler* handler)
         save_key_string(ip, length);
 
         handler->end_key();
+
+        strncpy(ctxt.name, ip, length);
+        ctxt.jsonToken = JSON_TOKEN_FIELD_NAME;
     } else if (*ip >= 0xF8 && *ip <= 0xFA) {
         // Reserved
-        // TODO?
-        handler->start_object();
-        (*orig_data)++;
-        return 0;
     } else if (*ip == 0xFB) {
         // END_OBJECT marker
         handler->end_object();
         (*orig_data)++;
-        return 0;
+        ctxt = *ctxt.parent;
     } else if (*ip >= 0xFC) {
         // Reserved
         (*orig_data)++;
@@ -153,21 +195,26 @@ int smile_decode_value(u8** orig_data, struct content_handler* handler)
         handler->characters(decoded_value, 0, strlen(decoded_value));
 
         handler->end_value();
+
+        ctxt.jsonToken = JSON_TOKEN_VALUE_STRING;
     } else if (*ip >= 0x20 && *ip <= 0x23) {
         handler->start_value();
         if (*ip == 0x20) {
             // Empty String
+            handler->characters(NULL, 0, -1);
+            ctxt.jsonToken = JSON_TOKEN_VALUE_STRING;
         } else if (*ip == 0x21) {
             // null
             handler->null_value();
-            handler->end_value();
+            ctxt.jsonToken = JSON_TOKEN_VALUE_NULL;
         } else if (*ip == 0x22) {
             // false
             handler->false_value();
-            handler->end_value();
-        } else if (*ip == 0x21) {
+            ctxt.jsonToken = JSON_TOKEN_VALUE_FALSE;
+        } else if (*ip == 0x23) {
             // true
             handler->true_value();
+            ctxt.jsonToken = JSON_TOKEN_VALUE_TRUE;
         }
         (*orig_data)++;
         handler->end_value();
@@ -198,12 +245,14 @@ int smile_decode_value(u8** orig_data, struct content_handler* handler)
             // Reserved for future use
             (*orig_data)++;
         }
+        ctxt.jsonToken = JSON_TOKEN_VALUE_NUMBER_INT;
     // Integral numbers
     // Floating point numbers
     } else if (*ip >= 0x28 && *ip <= 0x2B) {
         handler->start_value();
         (*orig_data)++;
         handler->end_value();
+        ctxt.jsonToken = JSON_TOKEN_VALUE_NUMBER_FLOAT;
     // Reserved for future use
     } else if (*ip >= 0x2C && *ip <= 0x3F) {
         handler->start_value();
@@ -221,6 +270,7 @@ int smile_decode_value(u8** orig_data, struct content_handler* handler)
         save_value_string(ip, length);
 
         handler->end_value();
+        ctxt.jsonToken = JSON_TOKEN_VALUE_STRING;
     // Small ASCII
     } else if (*ip >= 0x60 && *ip <= 0x7F) {
         // 5 LSB used to indicate lengths from 33 to 64 (bytes == chars)
@@ -233,6 +283,7 @@ int smile_decode_value(u8** orig_data, struct content_handler* handler)
         save_value_string(ip, length);
 
         handler->end_value();
+        ctxt.jsonToken = JSON_TOKEN_VALUE_STRING;
     // Tiny Unicode
     } else if (*ip >= 0x80 && *ip <= 0x9F) {
         // 5 LSB used to indicate _byte_ lengths from 2 to 33
@@ -245,6 +296,7 @@ int smile_decode_value(u8** orig_data, struct content_handler* handler)
         save_value_string(ip, length);
 
         handler->end_value();
+        ctxt.jsonToken = JSON_TOKEN_VALUE_STRING;
     // Small Unicode
     } else if (*ip >= 0xA0 && *ip <= 0xBF) {
         // 5 LSB used to indicate _byte_ lengths from 34 to 65
@@ -257,13 +309,15 @@ int smile_decode_value(u8** orig_data, struct content_handler* handler)
         save_value_string(ip, length);
 
         handler->end_value();
+        ctxt.jsonToken = JSON_TOKEN_VALUE_STRING;
     // Small integers
     } else if (*ip >= 0xC0 && *ip <= 0xDF) {
         handler->start_value();
-        (*orig_data)++;
-        ip++;
         handler->number_value(zz_decode(*ip & 0x1F));
         handler->end_value();
+        (*orig_data)++;
+        ip++;
+        ctxt.jsonToken = JSON_TOKEN_VALUE_NUMBER_INT;
     // Misc; binary / text / structure markers
     } else {
         if (*ip >= 0xE0 && *ip < 0xE4) {
@@ -281,6 +335,7 @@ int smile_decode_value(u8** orig_data, struct content_handler* handler)
             handler->characters(ip, 0, length);
 
             handler->end_value();
+            ctxt.jsonToken = JSON_TOKEN_VALUE_STRING;
         } else if (*ip >= 0xE4 && *ip < 0xE8) {
             // Long (variable length) Unicode text
              handler->start_value();
@@ -297,6 +352,7 @@ int smile_decode_value(u8** orig_data, struct content_handler* handler)
             handler->characters(ip, 0, length);
 
             handler->end_value();
+            ctxt.jsonToken = JSON_TOKEN_VALUE_STRING;
         } else if (*ip >= 0xE8 && *ip < 0xEC) {
             // Shared String reference, long
             handler->start_value();
@@ -306,21 +362,49 @@ int smile_decode_value(u8** orig_data, struct content_handler* handler)
             handler->characters(decoded_key, 0, strlen(decoded_key));
 
             handler->end_value();
+            ctxt.jsonToken = JSON_TOKEN_VALUE_STRING;
         } else if (*ip >= 0xEC && *ip < 0xF8) {
             // Binary, 7-bit encoded
             (*orig_data)++;
         } else if (*ip == SMILE_START_OBJECT) {
             handler->start_object();
             (*orig_data)++;
+
+            struct parser_context* new_ctxt = (struct parser_context*) malloc(sizeof(struct parser_context));
+            *new_ctxt = DEFAULT_PARSER_CONTEXT;
+            new_ctxt->contextType = CONTEXT_OBJECT;
+            new_ctxt->jsonToken = JSON_TOKEN_START_OBJECT;
+            new_ctxt->parent = &ctxt;
+            ctxt.child = new_ctxt;
+            ctxt = *new_ctxt;
         } else if (*ip == SMILE_END_OBJECT) {
             handler->end_object();
             (*orig_data)++;
+            struct parser_context* old_ctxt = &ctxt;
+            ctxt = *ctxt.parent;
+            free(old_ctxt);
         } else if  (*ip == SMILE_START_ARRAY) {
             handler->start_array();
             (*orig_data)++;
+            while (**orig_data != SMILE_END_ARRAY) {
+                smile_decode_value(orig_data, handler);
+            }
+            handler->end_array();
+            (*orig_data)++;
+
+            struct parser_context* new_ctxt = (struct parser_context*) malloc(sizeof(struct parser_context));
+            *new_ctxt = DEFAULT_PARSER_CONTEXT;
+            new_ctxt->contextType = CONTEXT_ARRAY;
+            new_ctxt->jsonToken = JSON_TOKEN_START_ARRAY;
+            new_ctxt->parent = &ctxt;
+            ctxt.child = new_ctxt;
+            ctxt = *new_ctxt;
         } else if (*ip == SMILE_END_ARRAY) {
             handler->end_array();
             (*orig_data)++;
+            struct parser_context* old_ctxt = &ctxt;
+            ctxt = *ctxt.parent;
+            free(old_ctxt);
         } else {
                 // TODO
         }
@@ -354,11 +438,14 @@ struct smile_header smile_decode_header(u8* raw_header)
 
 void smile_decode(u8* orig_data, int nbytes, struct content_handler* handler)
 {
+    ctxt = DEFAULT_PARSER_CONTEXT;
     u8* ip = orig_data;
     while (nbytes--) {
-        dprintf("Decoding key\n");
-        if (smile_decode_key((u8**) &ip, handler)) {
-            dprintf("Decoding value\n");
+        if (ctxt.contextType == CONTEXT_OBJECT && ctxt.jsonToken != JSON_TOKEN_FIELD_NAME) {
+            dprintf("[key 0x%X] ", *ip);
+            smile_decode_key((u8**) &ip, handler);
+        } else {
+            dprintf("[value 0x%X] ", *ip);
             smile_decode_value((u8**) &ip, handler);
         }
     }

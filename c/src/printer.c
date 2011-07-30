@@ -22,6 +22,8 @@ static int indent = 0;
 // API: Should we pass the full parser_context object instead?
 static int first_object = 1;
 static int first_value_in_object = 1;
+static int in_array = 0;
+static int first_value_in_array = 1;
 
 inline void print_start_object()
 {
@@ -54,6 +56,7 @@ inline void print_end_object()
 
 inline void print_start_array()
 {
+    in_array = 1;
     putchar('[');
     if (pretty_print) {
         putchar('\n');
@@ -63,11 +66,13 @@ inline void print_start_array()
 
 inline void print_end_array()
 {
+    in_array = 0;
     putchar(']');
     if (pretty_print) {
         putchar('\n');
         indent += 2;
     }
+    putchar(',');
 }
 
 inline void print_start_key()
@@ -94,6 +99,13 @@ inline void print_end_key()
 
 inline void print_start_value()
 {
+    if (in_array) {
+        if (!first_value_in_array) {
+            putchar(',');
+        } else {
+            first_value_in_array = 0;
+        }
+    }
 }
 
 inline void print_end_value()
@@ -124,6 +136,7 @@ void print_string(const u8* ch, int start, int length)
 {
     u8* quoted;
     int quoted_length;
+    int idx;
 
     putchar('"');
 
@@ -156,8 +169,9 @@ void print_string(const u8* ch, int start, int length)
     }
 
     if (!utf8) {
-        while (length--) {
-            putchar(*ip++);
+        while (idx < quoted_length) {
+            putchar(*ip + idx);
+            idx++;
         }
     } else {
         wprintf(L"%ls", ip);

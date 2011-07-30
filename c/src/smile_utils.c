@@ -56,8 +56,14 @@ int quote(const u8* before, int length, u8** after)
     int j = 0;
     for (i = 0; i < length; i++) {
         switch (before[i]) {
+            case '\n':
+                // printf("\\n") will print 0x5c 0x6e (and not 0x5c 0x0a)
+                quoted[j] = '\\';
+                j++;
+                quoted[j] = 'n';
+                j++;
+                break;
             case '"':
-            case '\\':
                 quoted[j] = '\\';
                 j++;
                 // Fall through.

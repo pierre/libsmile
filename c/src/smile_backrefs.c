@@ -71,7 +71,7 @@ void save_key_string(const u8* ip, size_t length)
     max_keys_ref_value++;
     strncpy(keys_tables[max_keys_ref_value], ip, length);
     keys_tables[max_keys_ref_value][length] = '\0';
-    dprintf("\nSaved shared key [%s] at #%d\n", keys_tables[max_keys_ref_value], max_keys_ref_value);
+    dprintf(" [%s] -> #%d", keys_tables[max_keys_ref_value], max_keys_ref_value);
 }
 
 static short decode_short_shared_value_reference(u8* ip)
@@ -118,5 +118,5 @@ void save_value_string(const u8* ip, size_t length)
     max_values_ref_value++;
     strncpy(values_tables[max_values_ref_value], ip, length);
     values_tables[max_values_ref_value][length] = '\0';
-    dprintf("\nSaved shared value [%s] at #%d\n", values_tables[max_values_ref_value], max_values_ref_value);
+    dprintf(" [%s] -> #%d\n", values_tables[max_values_ref_value], max_values_ref_value);
 }

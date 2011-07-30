@@ -448,10 +448,10 @@ void smile_decode(u8* orig_data, int nbytes, struct content_handler* handler)
     u8* ip = orig_data;
     while (nbytes--) {
         if (ctxt.contextType == CONTEXT_OBJECT && ctxt.jsonToken != JSON_TOKEN_FIELD_NAME) {
-            dprintf("[key 0x%X] ", *ip);
+            dprintf("\n[key 0x%X] ", *ip);
             smile_decode_key((u8**) &ip, handler);
         } else {
-            dprintf("[value 0x%X] ", *ip);
+            dprintf("\n[value 0x%X] ", *ip);
             smile_decode_value((u8**) &ip, handler);
         }
     }

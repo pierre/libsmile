@@ -3,4 +3,4 @@ ACLOCAL_AMFLAGS = ${ACLOCAL_FLAGS}
 
 SUBDIRS = src test
 
-TESTS = test/smile_tests
+TESTS = test/smile_tests test/data_tests.sh

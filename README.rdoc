@@ -2,6 +2,16 @@
 
 C implementation of the Smile binary format (http://wiki.fasterxml.com/SmileFormatSpec).
 
+The library ships with a command line tool (unsmile) to decode binary files on the command line.
+
+== Usage
+
+The API can be found under include/smile.h. A good starting point is tools/unsmile.c for a working example.
+
+== Build
+
+  make
+
 = License (see LICENSE-2.0.txt file for full license)
 
 Copyright 2011 Pierre-Alexandre Meyer

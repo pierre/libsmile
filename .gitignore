@@ -22,7 +22,6 @@ config.h
 config.status
 .dirstamp
 .deps
-Makefile
 mkmf.log
 .libs/
 config.guess
@@ -35,3 +34,7 @@ ltmain.sh
 *.bundle
 c/src/smile
 c/test/smile_tests
+unsmile
+libsmile.a
+test.sh
+unsmile.dSYM/

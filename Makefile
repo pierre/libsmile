@@ -13,6 +13,11 @@ CC      = gcc
 CFLAGS  = -Wall -Wmissing-prototypes -Wstrict-prototypes -O2 -fomit-frame-pointer -I. -I$(CURDIR)/include
 LDFLAGS = -g
 
+# DEBUG=1 make
+ifdef DEBUG
+	CFLAGS += -DDEBUG
+endif
+
 PROG    = unsmile
 
 LIB_OBJS = $(CURDIR)/lib/decode.o $(CURDIR)/lib/block.o

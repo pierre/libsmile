@@ -22,6 +22,7 @@
 #include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 struct smile_header {
     // Whether the header is valid
@@ -39,22 +40,44 @@ struct smile_header {
 
 typedef enum {
     HEAD,       /* Waiting for magic header :) */
-    STRUCTURE,  /* Waiting for next structure, either begin-array or begin-object */
+    ROOT,       /* Waiting for Root object */
+    ARRAY,      /* In array context */
+    VALUE,      /* Waiting for value */
+    KEY,        /* Waiting for key */
     DONE,       /* Done -- remain here until reset */
     BAD,        /* Got a data error -- remain here until reset */
 } decode_mode;
 
+// The encoded byte length of a String value that can be referenced is 64 bytes or less
+#define MAX_SHAREABLE_STRING_LENGTH 64
+#define KEYS_BUFFER_SIZE 1024
+#define VALUES_BUFFER_SIZE 1024
+
 struct decode_state {
     decode_mode mode;
     unsigned long hold;         /* input bit accumulator */
-    unsigned bits;              /* number of bits in "in" */
+    unsigned bits;              /* number of bits in "hold" */
     unsigned long total;        /* protected copy of output count */
+
+    bool in_array;              /* true if in array context */
+
+    bool first_key;             /* true if the next token is the first key of an object (used for printing) */
+    bool first_array_element;   /* true if the next token is the first value of an array (used for printing) */
+
     struct smile_header hdr;    /* smile header */
+
+    /* caches for back references */
+    char keys_tables[KEYS_BUFFER_SIZE][MAX_SHAREABLE_STRING_LENGTH + 1];
+    short max_keys_ref_value;
+    char values_tables[VALUES_BUFFER_SIZE][MAX_SHAREABLE_STRING_LENGTH + 1];
+    short max_values_ref_value;
 };
 
 #ifndef MAX_WBITS
 #  define MAX_WBITS   15 /* 32K window */
 #endif
+
+#define MAX_ERROR_MSG_SIZE 100
 
 struct decode_workspace {
     struct decode_state decode_state;

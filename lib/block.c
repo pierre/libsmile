@@ -49,7 +49,8 @@ int smile_decode_block_init(void)
 {
     if (!initialized++) {
         stream.workspace = malloc(sizeof(struct decode_workspace));
-        if (!stream.workspace) {
+        stream.msg = malloc(MAX_ERROR_MSG_SIZE);
+        if (!stream.workspace || !stream.msg) {
             initialized = 0;
             return -ENOMEM;
         }
@@ -64,5 +65,7 @@ int smile_decode_block_init(void)
 void smile_decode_block_exit(void)
 {
     if (!--initialized) {
+        free(stream.workspace);
+        free(stream.msg);
     }
 }

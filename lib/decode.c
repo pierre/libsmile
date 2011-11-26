@@ -19,12 +19,42 @@
 #include "decode.h"
 
 #ifdef DEBUG
-#define DEBUG_STREAM() \
+#define DEBUG_STREAM_BYTES(n) \
     do { \
-        printf("DEBUG: %c (%d/%d)\n", *strm->next_in, strm->total_in, strm->avail_in); \
+        debug_bits = 0; \
+        while (debug_bits < n) { \
+            printf("DEBUG: [%d] %c (%d/%d)\n", (strm->state)->mode, *(strm->next_in + debug_bits), strm->total_in + debug_bits, strm->avail_in); \
+            debug_bits++; \
+        }; \
+    } while (0)
+
+#define DEBUG_HEADER() \
+    do { \
+        if (strm->state->hdr.valid) { \
+            fputs("DEBUG: valid header, ", stdout); \
+        } else { \
+            fputs("DEBUG: invalid header, ", stdout); \
+        } \
+        printf("version [0x%u], ", strm->state->hdr.version); \
+        if (strm->state->hdr.raw_binary) { \
+            fputs("raw binary values present, ", stdout); \
+        } else { \
+            fputs("raw binary values absent, ", stdout); \
+        } \
+        if (strm->state->hdr.shared_key_names) { \
+            fputs("shared key names, ", stdout); \
+        } else { \
+            fputs("non-shared key names, ", stdout); \
+        } \
+        if (strm->state->hdr.shared_value_names) { \
+            fputs("shared values\n", stdout); \
+        } else { \
+            fputs("non-shared values\n", stdout); \
+        } \
     } while (0)
 #else
-#define DEBUG_STREAM()
+#define DEBUG_STREAM(n)
+#define DEBUG_HEADER()
 #endif
 
 /* Load registers with state for speed */
@@ -106,11 +136,14 @@ int smile_decode(s_stream *strm)
     unsigned int have, left;        /* available input and output */
     unsigned long hold;         /* bit buffer */
     unsigned int bits;              /* bits in bit buffer */
+#ifdef DEBUG
+    unsigned int debug_bits;
+#endif
     unsigned int in, out;           /* save starting available input and output */
     unsigned int copy;              /* number of stored or match bytes to copy */
     unsigned char *from;        /* where to copy match bytes from */
     unsigned int len;               /* length to copy for repeats, bits to drop */
-    int ret;                    /* return code */
+    int ret = 0;                    /* return code */
 
     if (strm == NULL || //strm->state == NULL ||
         (strm->next_in == NULL && strm->avail_in != 0)) {
@@ -124,21 +157,43 @@ int smile_decode(s_stream *strm)
     ret = 0;
 
     for (;;) {
-        DEBUG_STREAM();
         switch(state->mode) {
         case HEAD:
             NEEDBITS(32);
-            if (BITS(8) == ':' && BITS(8) == ')' && BITS(8) == '\n') {
-                DROPBITS(4);
-                INITBITS();
-                break;
-            } else {
+            if ((hold & 0xff) != ':' ||
+                ((hold >> 8) & 0xff) != ')'||
+                ((hold >> 16) & 0xff) != '\n') {
                 strm->msg = (char *)"incorrect header";
                 state->mode = BAD;
                 break;
             }
+
+            // Header verified
+            state->mode = DONE;
+            DROPBITS(24);
+
+            state->hdr.valid = true;
+            // 0x00 for current version
+            state->hdr.version = (BITS(8) & 0xF0);
+            // Whether raw binary (unescaped 8-bit) values may be present in content
+            state->hdr.raw_binary = (BITS(8) & 0x04) >> 2;
+            // Shared String key
+            state->hdr.shared_key_names = (BITS(8) & 0x01);
+            // Shared String value
+            state->hdr.shared_value_names = (BITS(8) & 0x02) >> 1;
+            DEBUG_HEADER();
+
+            INITBITS();
+            break;
+        case BAD:
+            ret = -1;
+            goto out;
+        DONE:
+            goto out;
         default:
-          return -1;
+            strm->msg = (char *)"shouldn't get here";
+            state->mode = BAD;
+            goto out;
         }
     }
 
@@ -151,10 +206,14 @@ out:
     strm->total_out += out;
     state->total += out;
 
-    return 0;
+    return ret;
 }
 
 void smile_decode_init(s_stream *strm)
 {
     strm->state = &WS(strm)->decode_state;
+
+    // Default Smile header: shared keys are enabled, but not values
+    strm->state->hdr.raw_binary = true;
+    strm->state->hdr.shared_key_names = true;
 }

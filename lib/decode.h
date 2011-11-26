@@ -14,13 +14,25 @@
  * under the License.
  */
 
-#ifndef _DECODE_H
-#define _DECODE_H
+#ifndef _DECODE_H_
+#define _DECODE_H_
 
 #include <smile.h>
+#include <stdbool.h>
 #include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
+
+struct smile_header {
+    // Whether the header is valid
+    bool valid;
+
+    short version;
+    bool raw_binary;
+    bool shared_key_names;
+    bool shared_value_names;
+};
+
 
 #define EIO     5   /* I/O error */
 #define ENOMEM  12  /* Out of memory */
@@ -37,6 +49,7 @@ struct decode_state {
     unsigned long hold;         /* input bit accumulator */
     unsigned bits;              /* number of bits in "in" */
     unsigned long total;        /* protected copy of output count */
+    struct smile_header hdr;    /* smile header */
 };
 
 #ifndef MAX_WBITS

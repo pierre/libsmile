@@ -101,7 +101,7 @@
    if there is no input available. */
 #define PULLBYTE() \
     do { \
-        if (have == 0) goto out; \
+        if (have <= 0) goto out; \
         have--; \
         hold += (unsigned long)(*next++) << bits; \
         bits += 8; \
@@ -146,21 +146,32 @@
      (((q) & 0xff00) << 8) + (((q) & 0xff) << 24))
 
 // TODO make it re-entrant (check space left)
+// Copy string to output buffer
 #define COPY(s) \
     do { \
         strncpy(put, s, strlen(s)); \
-        state->total += strlen(s); \
+        /* Update pointer to output buffer */ \
         put += strlen(s); \
+        /* Update total number of bytes written */ \
+        state->total += strlen(s); \
+        /* Update number of bytes left in the current output buffer */ \
         left -= strlen(s); \
     } while (0)
 
+// Copy data from input stream to outputstream
 #define COPY_BUFFER(l) \
     do { \
         strncpy(put, next, l); \
-        state->total += l; \
-        next += l; \
+        /* Update pointer to output buffer */ \
         put += l; \
+        /* Update pointer to input buffer */ \
+        next += l; \
+        /* Update total number of bytes written */ \
+        state->total += l; \
+        /* Update number of bytes left in the current output buffer */ \
         left -= l; \
+        /* Update number of bytes left in the current input buffer */ \
+        have -= l; \
     } while (0)
 
 #define COPY_VARIABLE_LENGTH_STRING() \
@@ -171,7 +182,7 @@
         COPY("\""); \
         /* Drop end-of-string marker */ \
         next++; \
-        left--; \
+        have--; \
     } while(0)
 
 #define LOOK_FOR_STRING_LENGTH() \
@@ -467,6 +478,9 @@ int smile_decode(s_stream *strm)
             } else if (BYTE() == 0xFB) {
                 // END_OBJECT marker
                 COPY("}");
+                state->mode = KEY;
+                INITBITS();
+                break;
             } else if (BYTE() >= 0xFC) {
                 // Reserved
                 RESERVED("key >= 0xFC");

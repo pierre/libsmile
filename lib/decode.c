@@ -428,7 +428,7 @@ int smile_decode(s_stream *strm)
                 SAVE_AND_COPY_VALUE_STRING();
             } else if (BYTE() >= 0xC0 && BYTE() <= 0xDF) {
                 // Small integers
-                NOT_IMPLEMENTED("value small int");
+                COPY_NB(ZZ_DECODE(BYTE() & 0x1F)); \
             } else {
                 // Misc; binary / text / structure markers
                 if (BYTE() >= 0xE0 && BYTE() < 0xE4) {

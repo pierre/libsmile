@@ -19,15 +19,7 @@
 #include "decode.h"
 
 #ifdef DEBUG
-#define DEBUG_STREAM_BYTES(n) \
-    do { \
-        debug_bits = 0; \
-        while (debug_bits < n) { \
-            printf("DEBUG: [%d] %c (0x%lx) (%d|%d)\n", state->mode, \
-                   (char) (debug_bits == 0 ? hold : (hold >> (8 * debug_bits))) & 0xff, (hold >> 8*n) & 0xff, have + (n - debug_bits + 1), left); \
-            debug_bits++; \
-        }; \
-    } while (0)
+#define DEBUG_STREAM_BYTE() printf("DEBUG: [%d] %c (0x%lx) (%d|%d)\n", state->mode, BYTE(), BYTE(), have, left)
 
 #define DEBUG_OUTPUT() \
     do { \
@@ -62,6 +54,7 @@
             fputs("non-shared values\n", stdout); \
         } \
     } while (0)
+
 #else
 #define DEBUG_OUTPUT()
 #define DEBUG_STREAM(n)
@@ -206,6 +199,16 @@
 #define RESERVED(s)         ERROR_REPORT("RESERVED", s, -20)
 #define NOT_IMPLEMENTED(s)  ERROR_REPORT("NOT IMPLEMENTED", s, -10)
 
+#define CHECK_SHARED_KEYS() \
+    do { \
+        if (!state->hdr.shared_key_names) { ERROR("Cannot lookup shared key, sharing disabled!"); } \
+    } while(0)
+
+#define CHECK_SHARED_VALUES() \
+    do { \
+        if (!state->hdr.shared_value_names) { ERROR("Cannot lookup shared value, sharing disabled!"); } \
+    } while(0)
+
 #define LOOKUP_SHORT_SHARED_KEY() state->keys_tables[BITS(8) - 0x40]
 #define LOOKUP_SHORT_SHARED_VALUE() state->values_tables[BITS(10) - 1]
 
@@ -277,7 +280,7 @@ int smile_decode(s_stream *strm)
     for (;;) {
         switch(state->mode) {
         case HEAD:
-            NEEDBITS(32);
+            NEEDBITS(24);
 
             if ((hold & 0xff) != ':' ||
                 ((hold >> 8) & 0xff) != ')'||
@@ -288,16 +291,21 @@ int smile_decode(s_stream *strm)
             }
             state->mode = ROOT;
 
+            INITBITS();
+            NEEDBITS(8);
+
             // Header verified
             state->hdr.valid = true;
             // 0x00 for current version
             state->hdr.version = (BYTE() & 0xF0);
             // Whether raw binary (unescaped 8-bit) values may be present in content
             state->hdr.raw_binary = (BYTE() & 0x04) >> 2;
+
             // Shared String key
-            state->hdr.shared_key_names = (BYTE() & 0x01);
+            state->hdr.shared_key_names = ((BYTE() & 0x01) == 1 ? true : false);
             // Shared String value
-            state->hdr.shared_value_names = (BYTE() & 0x02) >> 1;
+            state->hdr.shared_value_names = (((BYTE() & 0x02) >> 1) == 1 ? true : false);
+
             DEBUG_HEADER();
 
             INITBITS();
@@ -311,9 +319,9 @@ int smile_decode(s_stream *strm)
             NEEDBYTE();
 
             // TODO Kludge for now
-            if (state->in_array) {
-                if (state->first_array_element) {
-                    state->first_array_element = false;
+            if (state->in_array[state->nested_depth]) {
+                if (state->first_array_element[state->nested_depth]) {
+                    state->first_array_element[state->nested_depth] = false;
                 } else if (BYTE() != 0xF9) {
                     COPY(",");
                 }
@@ -322,6 +330,8 @@ int smile_decode(s_stream *strm)
             if (BYTE() >= 0x01 && BYTE() <= 0x1f) {
                 // 10 bit lookup
                 NEEDBITS(2);
+
+                CHECK_SHARED_VALUES();
 
                 COPY("\"");
                 COPY(LOOKUP_SHORT_SHARED_VALUE());
@@ -400,15 +410,21 @@ int smile_decode(s_stream *strm)
                 } else if (BYTE() == 0xF8) {
                     // START_ARRAY
                     COPY("[");
-                    state->in_array = true;
+                    state->nested_depth++;
+                    state->in_array[state->nested_depth] = true;
+                    state->first_array_element[state->nested_depth] = true;
                 } else if (BYTE() == 0xF9) {
                     // END_ARRAY
                     COPY("]");
-                    state->in_array = false;
+                    state->nested_depth--;
                 } else if (BYTE() == 0xFA) {
                     // START_OBJECT
                     COPY("{");
-                    state->first_key = true;
+                    state->nested_depth++;
+                    state->first_key[state->nested_depth] = true;
+                    state->mode = KEY;
+                    INITBITS();
+                    break;
                 } else if (BYTE() == 0xFB) {
                     // Reserved
                     RESERVED("value == 0xFB");
@@ -416,7 +432,7 @@ int smile_decode(s_stream *strm)
                     NOT_IMPLEMENTED("value >= 0xFC");
                 }
             }
-            if (!state->in_array) {
+            if (!state->in_array[state->nested_depth]) {
                 state->mode = KEY;
             }
             INITBITS();
@@ -425,8 +441,8 @@ int smile_decode(s_stream *strm)
             NEEDBYTE();
 
             // TODO Kludge for now
-            if (state->first_key) {
-                state->first_key = false;
+            if (state->first_key[state->nested_depth]) {
+                state->first_key[state->nested_depth] = false;
             } else if (BYTE() != 0xFB) {
                 COPY(",");
             }
@@ -458,6 +474,8 @@ int smile_decode(s_stream *strm)
                 RESERVED("0x3B <= key <= 0x3F");
             } else if (BYTE() >= 0x40 && BYTE() <= 0x7F) {
                 // "Short" shared key name reference (1 byte lookup)
+                CHECK_SHARED_KEYS();
+
                 COPY("\"");
                 COPY(LOOKUP_SHORT_SHARED_KEY());
                 COPY("\":");
@@ -478,7 +496,12 @@ int smile_decode(s_stream *strm)
             } else if (BYTE() == 0xFB) {
                 // END_OBJECT marker
                 COPY("}");
-                state->mode = KEY;
+                state->nested_depth--;
+                if (state->in_array[state->nested_depth]) {
+                    state->mode = VALUE;
+                } else {
+                    state->mode = KEY;
+                }
                 INITBITS();
                 break;
             } else if (BYTE() >= 0xFC) {
@@ -524,9 +547,10 @@ void smile_decode_init(s_stream *strm)
     strm->state->max_keys_ref_value = -1;
     strm->state->max_values_ref_value = -1;
 
-    strm->state->in_array = false;
+    strm->state->nested_depth = 0;
+    strm->state->in_array[0] = false;
 
     // Printing
-    strm->state->first_key = true;
-    strm->state->first_array_element = true;
+    strm->state->first_key[0] = true;
+    strm->state->first_array_element[0] = true;
 }

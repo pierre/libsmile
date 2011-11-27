@@ -59,10 +59,11 @@ struct decode_state {
     unsigned bits;              /* number of bits in "hold" */
     unsigned long total;        /* protected copy of output count */
 
-    bool in_array;              /* true if in array context */
+    int nested_depth;           /* pointer to current nest level */
+    bool in_array[30];          /* true if in array context */
+    bool first_array_element[30];   /* true if the next token is the first value of an array (used for printing) */
 
-    bool first_key;             /* true if the next token is the first key of an object (used for printing) */
-    bool first_array_element;   /* true if the next token is the first value of an array (used for printing) */
+    bool first_key[30];         /* true if the next token is the first key of an object (used for printing) */
 
     struct smile_header hdr;    /* smile header */
 

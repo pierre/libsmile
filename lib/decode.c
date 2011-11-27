@@ -448,6 +448,7 @@ int smile_decode(s_stream *strm)
                     state->nested_depth++;
                     state->in_array[state->nested_depth] = true;
                     state->first_array_element[state->nested_depth] = true;
+                    state->first_key[state->nested_depth] = false;
                 } else if (BYTE() == 0xF9) {
                     // END_ARRAY
                     COPY("]");
@@ -456,6 +457,8 @@ int smile_decode(s_stream *strm)
                     // START_OBJECT
                     COPY("{");
                     state->nested_depth++;
+                    state->in_array[state->nested_depth] = false;
+                    state->first_array_element[state->nested_depth] = false;
                     state->first_key[state->nested_depth] = true;
                     state->mode = KEY;
                     INITBITS();

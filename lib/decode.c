@@ -375,6 +375,7 @@ int smile_decode(s_stream *strm)
                     COPY("\"\"");
                 } else if (BYTE() == 0x21) {
                     // null
+                    COPY("null");
                 } else if (BYTE() == 0x22) {
                     // false
                     COPY("false");

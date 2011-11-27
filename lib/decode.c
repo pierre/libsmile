@@ -151,6 +151,15 @@
         left -= strlen(s); \
     } while (0)
 
+// Copy a number to output buffer
+#define MAX_SIZE_NB_BUF 100
+#define COPY_NB(n) \
+    do { \
+        memset(nb_buf, '\0', MAX_SIZE_NB_BUF); \
+        sprintf(nb_buf, "%lu", n); \
+        COPY(nb_buf); \
+    } while (0)
+
 // Copy data from input stream to outputstream
 #define COPY_BUFFER(l) \
     do { \
@@ -242,6 +251,27 @@
         COPY("\""); \
     } while(0)
 
+#define ZZ_DECODE(n) ((n >> 1) ^ (-(n & 1)))
+
+#define ZZVARINT_DECODE() \
+    do { \
+        smile_zzvarint_decode = 0; \
+        while(!(*next & 0x80)) { \
+            smile_zzvarint_decode <<= 7; \
+            smile_zzvarint_decode |= *next; \
+            /* Update pointer to input buffer */ \
+            next++; \
+            /* Update number of bytes left in the current input buffer */ \
+            have--; \
+        } \
+        /* last byte only has 6 payload bits */ \
+        smile_zzvarint_decode <<= 6; \
+        smile_zzvarint_decode |= (*next & 0x3F); \
+        next++; \
+        have--; \
+        COPY_NB(ZZ_DECODE(smile_zzvarint_decode)); \
+    } while (0);
+
 int smile_decode(s_stream *strm)
 {
     unsigned char *curr;
@@ -265,6 +295,8 @@ int smile_decode(s_stream *strm)
     int smile_key_length;
     int smile_value_length;
     short smile_value_lookup;
+    unsigned long smile_zzvarint_decode;
+    char nb_buf[MAX_SIZE_NB_BUF];
 
     if (strm == NULL || strm->state == NULL ||
         (strm->next_in == NULL && strm->avail_in != 0)) {
@@ -352,15 +384,17 @@ int smile_decode(s_stream *strm)
                 }
             } else if (BYTE() >= 0x24 && BYTE() <= 0x27) {
                 // Integral numbers
-                NOT_IMPLEMENTED("value integral numbers");
                 smile_value_length = (BYTE() & 0x03);
 
                 if (smile_value_length == 0) {
                     // 32-bit
+                    ZZVARINT_DECODE();
                 } else if (smile_value_length == 1) {
                     // 64-bit
+                    ZZVARINT_DECODE();
                 } else if (smile_value_length == 2) {
                     // BigInteger
+                    NOT_IMPLEMENTED("value BigInteger");
                 } else {
                     // Reserved for future use
                     RESERVED("integral numbers with length >= 3");

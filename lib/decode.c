@@ -139,7 +139,7 @@
      (((q) & 0xff00) << 8) + (((q) & 0xff) << 24))
 
 // TODO make it re-entrant (check space left)
-// Copy string to output buffer
+// Copy constant string to output buffer (assume string quoted)
 #define COPY(s) \
     do { \
         strncpy(put, s, strlen(s)); \
@@ -163,11 +163,25 @@
 // Copy data from input stream to outputstream
 #define COPY_BUFFER(l) \
     do { \
-        strncpy(put, next, l); \
-        /* Update pointer to output buffer */ \
-        put += l; \
-        /* Update pointer to input buffer */ \
-        next += l; \
+        /* A bit more complex than strncpy(put, next, l); as we need to quote characters... */ \
+        quote_idx = l; \
+        do { \
+            switch (*next) { \
+                case '\n': \
+                    /* printf("\\n") will print 0x5c 0x6e (and not 0x5c 0x0a) */ \
+                    *put++ = '\\'; \
+                    *put++ = 'n'; \
+                    left -= 2; \
+                    next++; \
+                    break; \
+                case '"': \
+                    *put = '\\'; \
+                    left--; \
+                    /* Fall through */ \
+                default: \
+                    *put++ = *next++; \
+            } \
+        } while (--quote_idx != 0); \
         /* Update total number of bytes written */ \
         state->total += l; \
         /* Update number of bytes left in the current output buffer */ \
@@ -297,6 +311,7 @@ int smile_decode(s_stream *strm)
     short smile_value_lookup;
     unsigned long smile_zzvarint_decode;
     char nb_buf[MAX_SIZE_NB_BUF];
+    int quote_idx;
 
     if (strm == NULL || strm->state == NULL ||
         (strm->next_in == NULL && strm->avail_in != 0)) {
@@ -525,7 +540,6 @@ int smile_decode(s_stream *strm)
             } else if (BYTE() >= 0xC0 && BYTE() <= 0xF7) {
                 // Short Unicode names
                 // 5 LSB used to indicate lengths from 2 to 57
-                NOT_IMPLEMENTED("key short unicode");
                 smile_key_length = (BYTE() - 0xC0) + 2;
                 SAVE_AND_COPY_KEY_STRING();
             } else if (BYTE() >= 0xF8 && BYTE() <= 0xFA) {

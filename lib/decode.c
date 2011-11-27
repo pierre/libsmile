@@ -251,7 +251,7 @@
         COPY("\""); \
     } while(0)
 
-#define ZZ_DECODE(n) ((n >> 1) ^ (-(n & 1)))
+#define ZZ_DECODE(n) (((n) >> 1) ^ (-((n) & 1)))
 
 #define ZZVARINT_DECODE() \
     do { \

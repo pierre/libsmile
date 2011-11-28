@@ -175,7 +175,7 @@
                     next++; \
                     break; \
                 case '"': \
-                    *put = '\\'; \
+                    *put++ = '\\'; \
                     left--; \
                     /* Fall through */ \
                 default: \

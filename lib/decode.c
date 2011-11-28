@@ -156,7 +156,7 @@
 #define COPY_NB(n) \
     do { \
         memset(nb_buf, '\0', MAX_SIZE_NB_BUF); \
-        sprintf(nb_buf, "%lu", n); \
+        sprintf(nb_buf, "%ld", n); \
         COPY(nb_buf); \
     } while (0)
 

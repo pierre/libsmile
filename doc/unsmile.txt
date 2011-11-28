@@ -1,0 +1,36 @@
+unsmile(1)
+==========
+v0.2, November 2011
+
+NAME
+----
+unsmile - decode Smile binary data to plain text Json
+
+SYNOPSIS
+--------
+'unsmile' [-p] <file>
+
+DESCRIPTION
+-----------
+unsmile will read Smile binary data and output plain text Json, as defined by rfc4627.
+
+DIAGNOSTICS
+-----------
+The exit status (or error level) takes on the following values:
+  0      normal; no errors or warnings detected.
+
+URL
+---
+The latest Smile format spec can be found at
+  http://wiki.fasterxml.com/SmileFormatSpec
+
+AUTHORS
+-------
+"Smile" is codename for an efficient JSON-compatible binary data format, initially developed by Jackson JSON processor project team.
+
+unsmile is based on libsmile, written by Pierre-Alexandre Meyer <pierre@mouraf.org>
+
+VERSIONS
+--------
+v0.1   July 11      Initial version
+v0.1   November 11  Update to libsmile v0.2

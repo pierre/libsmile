@@ -1,0 +1,31 @@
+unsmile(3)
+==========
+v0.2, November 2011
+
+NAME
+----
+libsmile - encode or decode files in Smile format
+
+SYNOPSIS
+--------
+#include "<smile.h>"
+
+DESCRIPTION
+-----------
+This library encodes and decodes Smile.
+
+URL
+---
+The latest Smile format spec can be found at
+  http://wiki.fasterxml.com/SmileFormatSpec
+
+AUTHORS
+-------
+"Smile" is codename for an efficient JSON-compatible binary data format, initially developed by Jackson JSON processor project team.
+
+libsmile written by Pierre-Alexandre Meyer <pierre@mouraf.org>
+
+VERSIONS
+--------
+v0.1   July 11      Initial version
+v0.2   November 11  Stream model

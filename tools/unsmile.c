@@ -24,7 +24,7 @@
 #include "usage.h"
 #include <smile.h>
 
-#define BUFFER_SIZE 1024
+#define BUFFER_SIZE 65536
 
 static const char unsmile_usage[] = "unsmile [-p|--pretty] <file>";
 

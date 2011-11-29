@@ -14,8 +14,8 @@
  * under the License.
  */
 
-#ifndef _DECODE_H_
-#define _DECODE_H_
+#ifndef _SMILE_DECODE_H_
+#define _SMILE_DECODE_H_
 
 #include <smile.h>
 #include <stdbool.h>

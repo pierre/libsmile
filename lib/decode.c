@@ -17,6 +17,7 @@
  */
 
 #include "decode.h"
+#include "bits.h"
 
 #ifdef DEBUG
 #define DEBUG_STREAM_BYTE() printf("DEBUG: [%d] %c (0x%lx) (%d|%d)\n", state->mode, BYTE(), BYTE(), have, left)
@@ -83,48 +84,9 @@
         state->bits = bits; \
     } while (0)
 
-/* Clear the input bit accumulator */
-#define INITBITS() \
-    do { \
-        hold = 0; \
-        bits = 0; \
-    } while (0)
-
-/* Get a byte of input into the bit accumulator, or return
-   if there is no input available. */
-#define PULLBYTE() \
-    do { \
-        if (have <= 0) goto out; \
-        have--; \
-        hold += (unsigned long)(*next++) << bits; \
-        bits += 8; \
-    } while (0)
-
-#define NEEDBYTE()      NEEDBITS(8)
-#define NEEDBYTES(b)    NEEDBITS((b << 3))
-
-/* Assure that there are at least n bits in the bit accumulator.  If there is
-   not enough available input to do that, then return */
-#define NEEDBITS(n) \
-    do { \
-        while (bits < (unsigned)(n)) \
-            PULLBYTE(); \
-    } while (0)
-
 #define BYTE()  BITS(8)
-
-/* Return the low n bits of the bit accumulator (n < 16) */
-#define BITS(n) \
-    ((unsigned)hold & ((1U << (n)) - 1))
-
-#define DROPBYTE()  DROPBITS(8)
-
-/* Remove n bits from the bit accumulator */
-#define DROPBITS(n) \
-    do { \
-        hold >>= (n); \
-        bits -= (unsigned)(n); \
-    } while (0)
+#define NEED_BYTE()     PULL_BITS(8)
+#define NEEDBYTES(b)    PULL_BITS((b << 3))
 
 /* Remove zero to seven bits as needed to go to a byte boundary */
 #define BYTEBITS() \
@@ -327,7 +289,7 @@ int smile_decode(s_stream *strm)
     for (;;) {
         switch(state->mode) {
         case HEAD:
-            NEEDBITS(24);
+            PULL_BITS(24);
 
             if ((hold & 0xff) != ':' ||
                 ((hold >> 8) & 0xff) != ')'||
@@ -338,8 +300,8 @@ int smile_decode(s_stream *strm)
             }
             state->mode = ROOT;
 
-            INITBITS();
-            NEEDBITS(8);
+            CLEAR_BITS();
+            PULL_BITS(8);
 
             // Header verified
             state->hdr.valid = true;
@@ -355,7 +317,7 @@ int smile_decode(s_stream *strm)
 
             DEBUG_HEADER();
 
-            INITBITS();
+            CLEAR_BITS();
             break;
         // Value is the default mode for tokens for main-level ("root") output context and JSON Array context.
         // It is also used between JSON Object property name tokens.
@@ -363,7 +325,7 @@ int smile_decode(s_stream *strm)
         case ARRAY:
         case VALUE:
             // Tokens are divided in 8 classes, class defined by 3 MSB of the first byte:
-            NEEDBYTE();
+            NEED_BYTE();
 
             // TODO Kludge for now
             if (state->in_array[state->nested_depth]) {
@@ -376,7 +338,7 @@ int smile_decode(s_stream *strm)
 
             if (BYTE() >= 0x01 && BYTE() <= 0x1f) {
                 // 10 bit lookup
-                NEEDBITS(2);
+                PULL_BITS(2);
 
                 CHECK_SHARED_VALUES();
 
@@ -476,7 +438,7 @@ int smile_decode(s_stream *strm)
                     state->first_array_element[state->nested_depth] = false;
                     state->first_key[state->nested_depth] = true;
                     state->mode = KEY;
-                    INITBITS();
+                    CLEAR_BITS();
                     break;
                 } else if (BYTE() == 0xFB) {
                     // Reserved
@@ -488,10 +450,10 @@ int smile_decode(s_stream *strm)
             if (!state->in_array[state->nested_depth]) {
                 state->mode = KEY;
             }
-            INITBITS();
+            CLEAR_BITS();
             break;
         case KEY:
-            NEEDBYTE();
+            NEED_BYTE();
 
             // TODO Kludge for now
             if (state->first_key[state->nested_depth]) {
@@ -554,14 +516,14 @@ int smile_decode(s_stream *strm)
                 } else {
                     state->mode = KEY;
                 }
-                INITBITS();
+                CLEAR_BITS();
                 break;
             } else if (BYTE() >= 0xFC) {
                 // Reserved
                 RESERVED("key >= 0xFC");
             }
             state->mode = VALUE;
-            INITBITS();
+            CLEAR_BITS();
             break;
         case BAD:
             ret = -1;

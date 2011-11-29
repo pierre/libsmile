@@ -67,6 +67,7 @@
  * Remove n bits from the bit buffer
  *
  * The caller is responsible for calling NEED_BITS(n) first
+ * This does not impact our position in the input and output buffers
  */
 #define DROP_BITS(n) \
     do { \
@@ -85,5 +86,12 @@
  */
 #define BITS(n) \
     ((unsigned)hold & ((1U << (n)) - 1))
+
+/*
+ * Return the low 8 bits of the bit buffer
+ *
+ * The caller is responsible for calling PULL_BYTE() first
+ */
+#define BYTE()  BITS(8)
 
 #endif

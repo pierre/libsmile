@@ -18,6 +18,7 @@
 
 #include "decode.h"
 #include "bits.h"
+#include "backrefs.h"
 
 #ifdef DEBUG
 #define DEBUG_STREAM_BYTE() printf("DEBUG: [%d] %c (0x%lx) (%d|%d)\n", state->mode, BYTE(), BYTE(), have, left)
@@ -83,22 +84,6 @@
         state->hold = hold; \
         state->bits = bits; \
     } while (0)
-
-#define BYTE()  BITS(8)
-#define NEED_BYTE()     PULL_BITS(8)
-#define NEEDBYTES(b)    PULL_BITS((b << 3))
-
-/* Remove zero to seven bits as needed to go to a byte boundary */
-#define BYTEBITS() \
-    do { \
-        hold >>= bits & 7; \
-        bits -= bits & 7; \
-    } while (0)
-
-/* Reverse the bytes in a 32-bit value */
-#define REVERSE(q) \
-    ((((q) >> 24) & 0xff) + (((q) >> 8) & 0xff00) + \
-     (((q) & 0xff00) << 8) + (((q) & 0xff) << 24))
 
 // TODO make it re-entrant (check space left)
 // Copy constant string to output buffer (assume string quoted)
@@ -183,49 +168,6 @@
 #define ERROR(s)            ERROR_REPORT("ERROR", s, -30)
 #define RESERVED(s)         ERROR_REPORT("RESERVED", s, -20)
 #define NOT_IMPLEMENTED(s)  ERROR_REPORT("NOT IMPLEMENTED", s, -10)
-
-#define CHECK_SHARED_KEYS() \
-    do { \
-        if (!state->hdr.shared_key_names) { ERROR("Cannot lookup shared key, sharing disabled!"); } \
-    } while(0)
-
-#define CHECK_SHARED_VALUES() \
-    do { \
-        if (!state->hdr.shared_value_names) { ERROR("Cannot lookup shared value, sharing disabled!"); } \
-    } while(0)
-
-#define LOOKUP_SHORT_SHARED_KEY() state->keys_tables[BITS(8) - 0x40]
-#define LOOKUP_SHORT_SHARED_VALUE() state->values_tables[BITS(10) - 1]
-
-#define SAVE_KEY_STRING(l) \
-    do { \
-        state->max_keys_ref_value++; \
-        strncpy(state->keys_tables[state->max_keys_ref_value], next, l); \
-        state->keys_tables[state->max_keys_ref_value][l] = '\0'; \
-    } while(0)
-
-#define SAVE_AND_COPY_KEY_STRING() \
-    do { \
-        SAVE_KEY_STRING(smile_key_length); \
-        COPY("\""); \
-        COPY_BUFFER(smile_key_length); \
-        COPY("\":"); \
-    } while(0)
-
-#define SAVE_VALUE_STRING(l) \
-    do { \
-        state->max_values_ref_value++; \
-        strncpy(state->values_tables[state->max_values_ref_value], next, l); \
-        state->values_tables[state->max_values_ref_value][l] = '\0'; \
-    } while(0)
-
-#define SAVE_AND_COPY_VALUE_STRING() \
-    do { \
-        SAVE_VALUE_STRING(smile_value_length); \
-        COPY("\""); \
-        COPY_BUFFER(smile_value_length); \
-        COPY("\""); \
-    } while(0)
 
 #define ZZ_DECODE(n) (((n) >> 1) ^ (-((n) & 1)))
 
@@ -325,7 +267,7 @@ int smile_decode(s_stream *strm)
         case ARRAY:
         case VALUE:
             // Tokens are divided in 8 classes, class defined by 3 MSB of the first byte:
-            NEED_BYTE();
+            PULL_BYTE();
 
             // TODO Kludge for now
             if (state->in_array[state->nested_depth]) {
@@ -340,11 +282,7 @@ int smile_decode(s_stream *strm)
                 // 10 bit lookup
                 PULL_BITS(2);
 
-                CHECK_SHARED_VALUES();
-
-                COPY("\"");
-                COPY(LOOKUP_SHORT_SHARED_VALUE());
-                COPY("\"");
+                COPY_SHARED_VALUE_STRING();
             } else if (BYTE() >= 0x20 && BYTE() <= 0x23) {
                 // Simple literals, numbers
                 if (BYTE() == 0x20) {
@@ -387,23 +325,23 @@ int smile_decode(s_stream *strm)
                 // Tiny ASCII
                 // 5 LSB used to indicate lengths from 2 to 32 (bytes == chars)
                 smile_value_length = (BYTE() & 0x1F) + 1;
-                SAVE_AND_COPY_VALUE_STRING();
+                COPY_VALUE_STRING();
             } else if (BYTE() >= 0x60 && BYTE() <= 0x7F) {
                 // Small ASCII
                 // 5 LSB used to indicate lengths from 33 to 64 (bytes == chars)
                 smile_value_length = (BYTE() & 0x1F) + 33;
-                SAVE_AND_COPY_VALUE_STRING();
+                COPY_VALUE_STRING();
             } else if (BYTE() >= 0x80 && BYTE() <= 0x9F) {
                 // Tiny Unicode
                 // 5 LSB used to indicate _byte_ lengths from 2 to 33
                 smile_value_length = (BYTE() & 0x1F) + 1;
-                SAVE_AND_COPY_VALUE_STRING();
+                COPY_VALUE_STRING();
             } else if (BYTE() >= 0xA0 && BYTE() <= 0xBF) {
                 // Small Unicode
                 NOT_IMPLEMENTED("value small unicode");
                 // 5 LSB used to indicate _byte_ lengths from 34 to 65
                 smile_value_length = (BYTE() & 0x1F) + 33;
-                SAVE_AND_COPY_VALUE_STRING();
+                COPY_VALUE_STRING();
             } else if (BYTE() >= 0xC0 && BYTE() <= 0xDF) {
                 // Small integers
                 COPY_NB(ZZ_DECODE(BYTE() & 0x1F)); \
@@ -453,7 +391,7 @@ int smile_decode(s_stream *strm)
             CLEAR_BITS();
             break;
         case KEY:
-            NEED_BYTE();
+            PULL_BYTE();
 
             // TODO Kludge for now
             if (state->first_key[state->nested_depth]) {
@@ -489,21 +427,17 @@ int smile_decode(s_stream *strm)
                 RESERVED("0x3B <= key <= 0x3F");
             } else if (BYTE() >= 0x40 && BYTE() <= 0x7F) {
                 // "Short" shared key name reference (1 byte lookup)
-                CHECK_SHARED_KEYS();
-
-                COPY("\"");
-                COPY(LOOKUP_SHORT_SHARED_KEY());
-                COPY("\":");
+                COPY_SHARED_KEY_STRING();
             } else if (BYTE() >= 0x80 && BYTE() <= 0xBF) {
                 // Short Ascii names
                 // 5 LSB used to indicate lengths from 2 to 32 (bytes == chars)
                 smile_key_length = (BYTE() & 0x1F) + 1;
-                SAVE_AND_COPY_KEY_STRING();
+                COPY_KEY_STRING();
             } else if (BYTE() >= 0xC0 && BYTE() <= 0xF7) {
                 // Short Unicode names
                 // 5 LSB used to indicate lengths from 2 to 57
                 smile_key_length = (BYTE() - 0xC0) + 2;
-                SAVE_AND_COPY_KEY_STRING();
+                COPY_KEY_STRING();
             } else if (BYTE() >= 0xF8 && BYTE() <= 0xFA) {
                 // Reserved
                 RESERVED("0xF8 <= key <= 0xFA");

@@ -19,49 +19,7 @@
 #include "decode.h"
 #include "bits.h"
 #include "backrefs.h"
-
-#ifdef DEBUG
-#define DEBUG_STREAM_BYTE() printf("DEBUG: [%d] %c (0x%lx) (%d|%d)\n", state->mode, *next, *next, have, left)
-
-#define DEBUG_OUTPUT() \
-    do { \
-        nb_out = 0; \
-        while (nb_out < strm->state->total) { \
-          putchar(*(strm->next_out + nb_out)); \
-          nb_out++; \
-        } \
-    } while(0);
-
-#define DEBUG_HEADER() \
-    do { \
-        if (strm->state->hdr.valid) { \
-            fputs("DEBUG: valid header, ", stdout); \
-        } else { \
-            fputs("DEBUG: invalid header, ", stdout); \
-        } \
-        printf("version [0x%u], ", strm->state->hdr.version); \
-        if (strm->state->hdr.raw_binary) { \
-            fputs("raw binary values present, ", stdout); \
-        } else { \
-            fputs("raw binary values absent, ", stdout); \
-        } \
-        if (strm->state->hdr.shared_key_names) { \
-            fputs("shared key names, ", stdout); \
-        } else { \
-            fputs("non-shared key names, ", stdout); \
-        } \
-        if (strm->state->hdr.shared_value_names) { \
-            fputs("shared values\n", stdout); \
-        } else { \
-            fputs("non-shared values\n", stdout); \
-        } \
-    } while (0)
-
-#else
-#define DEBUG_OUTPUT()
-#define DEBUG_STREAM_BYTE()
-#define DEBUG_HEADER()
-#endif
+#include "debug.h"
 
 /* Load registers with state for speed */
 #define LOAD() \
@@ -201,8 +159,7 @@ int smile_decode(s_stream *strm)
     unsigned int bits;          /* bits in bit buffer */
     unsigned int bytes;
 #ifdef DEBUG
-    unsigned int debug_bits;
-    int nb_out;
+    unsigned int debug_bytes_output;    /* local variable for DEBUG_OUTPUT macro */
 #endif
     unsigned int in, out;       /* save starting available input and output */
     unsigned int copy;          /* number of stored or match bytes to copy */

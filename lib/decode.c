@@ -21,7 +21,7 @@
 #include "backrefs.h"
 
 #ifdef DEBUG
-#define DEBUG_STREAM_BYTE() printf("DEBUG: [%d] %c (0x%lx) (%d|%d)\n", state->mode, BYTE(), BYTE(), have, left)
+#define DEBUG_STREAM_BYTE() printf("DEBUG: [%d] %c (0x%lx) (%d|%d)\n", state->mode, *next, *next, have, left)
 
 #define DEBUG_OUTPUT() \
     do { \
@@ -59,7 +59,7 @@
 
 #else
 #define DEBUG_OUTPUT()
-#define DEBUG_STREAM(n)
+#define DEBUG_STREAM_BYTE()
 #define DEBUG_HEADER()
 #endif
 

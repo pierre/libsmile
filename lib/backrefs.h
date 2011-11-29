@@ -56,9 +56,9 @@
         if (state->hdr.shared_key_names) { \
             SAVE_KEY_STRING(smile_key_length); \
         } \
-        COPY("\""); \
+        COPY_STRING("\""); \
         COPY_BUFFER(smile_key_length); \
-        COPY("\":"); \
+        COPY_STRING("\":"); \
     } while(0)
 
 /*
@@ -74,9 +74,9 @@
         if (state->hdr.shared_value_names) { \
             SAVE_VALUE_STRING(smile_value_length); \
         } \
-        COPY("\""); \
+        COPY_STRING("\""); \
         COPY_BUFFER(smile_value_length); \
-        COPY("\""); \
+        COPY_STRING("\""); \
     } while(0)
 
 /*
@@ -87,9 +87,9 @@
         if (!state->hdr.shared_key_names) { \
             ERROR("Cannot lookup shared key, sharing disabled!"); \
         } \
-        COPY("\""); \
-        COPY(state->keys_tables[BITS(8) - 0x40]); \
-        COPY("\":"); \
+        COPY_STRING("\""); \
+        COPY_STRING(state->keys_tables[BITS(8) - 0x40]); \
+        COPY_STRING("\":"); \
     } while(0)
 
 /*
@@ -100,9 +100,9 @@
         if (!state->hdr.shared_value_names) { \
             ERROR("Cannot lookup shared value, sharing disabled!"); \
         } \
-        COPY("\""); \
-        COPY(state->values_tables[BITS(10) - 1]); \
-        COPY("\""); \
+        COPY_STRING("\""); \
+        COPY_STRING(state->values_tables[BITS(10) - 1]); \
+        COPY_STRING("\""); \
     } while(0)
 
 #endif

@@ -24,6 +24,12 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "backrefs.h"
+#include "bits.h"
+#include "copy.h"
+#include "debug.h"
+
+
 struct smile_header {
     // Whether the header is valid
     bool valid;

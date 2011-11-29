@@ -17,9 +17,6 @@
  */
 
 #include "decode.h"
-#include "bits.h"
-#include "backrefs.h"
-#include "debug.h"
 
 /* Load registers with state for speed */
 #define LOAD() \
@@ -42,77 +39,6 @@
         state->hold = hold; \
         state->bits = bits; \
     } while (0)
-
-// TODO make it re-entrant (check space left)
-// Copy constant string to output buffer (assume string quoted)
-#define COPY(s) \
-    do { \
-        strncpy(put, s, strlen(s)); \
-        /* Update pointer to output buffer */ \
-        put += strlen(s); \
-        /* Update total number of bytes written */ \
-        state->total += strlen(s); \
-        /* Update number of bytes left in the current output buffer */ \
-        left -= strlen(s); \
-    } while (0)
-
-// Copy a number to output buffer
-#define MAX_SIZE_NB_BUF 100
-#define COPY_NB(n) \
-    do { \
-        memset(nb_buf, '\0', MAX_SIZE_NB_BUF); \
-        sprintf(nb_buf, "%ld", n); \
-        COPY(nb_buf); \
-    } while (0)
-
-// Copy data from input stream to outputstream
-#define COPY_BUFFER(l) \
-    do { \
-        /* A bit more complex than strncpy(put, next, l); as we need to quote characters... */ \
-        quote_idx = l; \
-        do { \
-            switch (*next) { \
-                case '\n': \
-                    /* printf("\\n") will print 0x5c 0x6e (and not 0x5c 0x0a) */ \
-                    *put++ = '\\'; \
-                    *put++ = 'n'; \
-                    left -= 2; \
-                    next++; \
-                    break; \
-                case '"': \
-                    *put++ = '\\'; \
-                    left--; \
-                    /* Fall through */ \
-                default: \
-                    *put++ = *next++; \
-            } \
-        } while (--quote_idx != 0); \
-        /* Update total number of bytes written */ \
-        state->total += l; \
-        /* Update number of bytes left in the current output buffer */ \
-        left -= l; \
-        /* Update number of bytes left in the current input buffer */ \
-        have -= l; \
-    } while (0)
-
-#define COPY_VARIABLE_LENGTH_STRING() \
-    do { \
-        LOOK_FOR_STRING_LENGTH(); \
-        COPY("\""); \
-        COPY_BUFFER(smile_value_length); \
-        COPY("\""); \
-        /* Drop end-of-string marker */ \
-        next++; \
-        have--; \
-    } while(0)
-
-#define LOOK_FOR_STRING_LENGTH() \
-    do { \
-        smile_value_length = 0; \
-        while (*(next + smile_value_length) != 0xFC) { \
-            smile_value_length++; \
-        } \
-    } while(0)
 
 #define ERROR_REPORT(prefix, msg, error) \
     do { \
@@ -167,11 +93,12 @@ int smile_decode(s_stream *strm)
     unsigned int len;           /* length to copy for repeats, bits to drop */
     int ret = 0;                /* return code */
 
+    int copy_string_length;             /* local variable for COPY macro */
+    char copy_nb_buf[21];               /* local variable for COPY_NB macro (21 for up to 20 digits) */
     int smile_key_length;
     int smile_value_length;
     short smile_value_lookup;
     unsigned long smile_zzvarint_decode;
-    char nb_buf[MAX_SIZE_NB_BUF];
     int quote_idx;
 
     if (strm == NULL || strm->state == NULL ||
@@ -231,7 +158,7 @@ int smile_decode(s_stream *strm)
                 if (state->first_array_element[state->nested_depth]) {
                     state->first_array_element[state->nested_depth] = false;
                 } else if (BYTE() != 0xF9) {
-                    COPY(",");
+                    COPY_STRING(",");
                 }
             }
 
@@ -244,16 +171,16 @@ int smile_decode(s_stream *strm)
                 // Simple literals, numbers
                 if (BYTE() == 0x20) {
                     // Empty String
-                    COPY("\"\"");
+                    COPY_STRING("\"\"");
                 } else if (BYTE() == 0x21) {
                     // null
-                    COPY("null");
+                    COPY_STRING("null");
                 } else if (BYTE() == 0x22) {
                     // false
-                    COPY("false");
+                    COPY_STRING("false");
                 } else if (BYTE() == 0x23) {
                     // true
-                    COPY("true");
+                    COPY_STRING("true");
                 }
             } else if (BYTE() >= 0x24 && BYTE() <= 0x27) {
                 // Integral numbers
@@ -316,18 +243,18 @@ int smile_decode(s_stream *strm)
                     NOT_IMPLEMENTED("value binary");
                 } else if (BYTE() == 0xF8) {
                     // START_ARRAY
-                    COPY("[");
+                    COPY_STRING("[");
                     state->nested_depth++;
                     state->in_array[state->nested_depth] = true;
                     state->first_array_element[state->nested_depth] = true;
                     state->first_key[state->nested_depth] = false;
                 } else if (BYTE() == 0xF9) {
                     // END_ARRAY
-                    COPY("]");
+                    COPY_STRING("]");
                     state->nested_depth--;
                 } else if (BYTE() == 0xFA) {
                     // START_OBJECT
-                    COPY("{");
+                    COPY_STRING("{");
                     state->nested_depth++;
                     state->in_array[state->nested_depth] = false;
                     state->first_array_element[state->nested_depth] = false;
@@ -354,7 +281,7 @@ int smile_decode(s_stream *strm)
             if (state->first_key[state->nested_depth]) {
                 state->first_key[state->nested_depth] = false;
             } else if (BYTE() != 0xFB) {
-                COPY(",");
+                COPY_STRING(",");
             }
 
             // Byte ranges are divided in 4 main sections (64 byte values each)
@@ -363,7 +290,7 @@ int smile_decode(s_stream *strm)
                 RESERVED("0x01 <= key <= 0x1F");
             } else if (BYTE() == 0x20) {
                 // Empty String
-                COPY("\"\"");
+                COPY_STRING("\"\"");
             } else if (BYTE() >= 0x21 && BYTE() <= 0x2F) {
                 // Reserved for future use
                 RESERVED("0x21 <= key <= 0x2F");
@@ -400,7 +327,7 @@ int smile_decode(s_stream *strm)
                 RESERVED("0xF8 <= key <= 0xFA");
             } else if (BYTE() == 0xFB) {
                 // END_OBJECT marker
-                COPY("}");
+                COPY_STRING("}");
                 state->nested_depth--;
                 if (state->in_array[state->nested_depth]) {
                     state->mode = VALUE;

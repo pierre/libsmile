@@ -29,6 +29,7 @@
 #include "copy.h"
 #include "debug.h"
 #include "error.h"
+#include "varint.h"
 
 
 struct smile_header {

@@ -40,27 +40,6 @@
         state->bits = bits; \
     } while (0)
 
-#define ZZ_DECODE(n) (((n) >> 1) ^ (-((n) & 1)))
-
-#define ZZVARINT_DECODE() \
-    do { \
-        smile_zzvarint_decode = 0; \
-        while(!(*next & 0x80)) { \
-            smile_zzvarint_decode <<= 7; \
-            smile_zzvarint_decode |= *next; \
-            /* Update pointer to input buffer */ \
-            next++; \
-            /* Update number of bytes left in the current input buffer */ \
-            have--; \
-        } \
-        /* last byte only has 6 payload bits */ \
-        smile_zzvarint_decode <<= 6; \
-        smile_zzvarint_decode |= (*next & 0x3F); \
-        next++; \
-        have--; \
-        COPY_NB(ZZ_DECODE(smile_zzvarint_decode)); \
-    } while (0);
-
 int smile_decode(s_stream *strm)
 {
     unsigned char *curr;
@@ -80,12 +59,12 @@ int smile_decode(s_stream *strm)
     unsigned int len;           /* length to copy for repeats, bits to drop */
     int ret = 0;                /* return code */
 
-    int copy_string_length;             /* local variable for COPY macro */
+    int copy_string_length;             /* local variable for COPY_STRING macro */
     char copy_nb_buf[21];               /* local variable for COPY_NB macro (21 for up to 20 digits) */
     int smile_key_length;
     int smile_value_length;
     short smile_value_lookup;
-    unsigned long smile_zzvarint_decode;
+    unsigned long smile_zzvarint_decode;/* local variable for VARINT_DECODE macro */
     int quote_idx;
 
     if (strm == NULL || strm->state == NULL ||

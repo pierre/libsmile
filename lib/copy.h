@@ -56,7 +56,15 @@
         COPY_STRING(copy_nb_buf); \
     } while (0)
 
-// Copy data from input stream to outputstream
+/*
+ * Copy data from input stream into the output buffer
+ *
+ * If there isn't enough bytes in the output buffer, return from smile_decode,
+ * saving enough state to be able to resume
+ *
+ * TODO: cache state->total variable to avoid lookups
+ * TODO: make it actually re-entrant
+ */
 #define COPY_BUFFER(l) \
     do { \
         /* A bit more complex than strncpy(put, next, l); as we need to quote characters... */ \

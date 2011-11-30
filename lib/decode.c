@@ -42,28 +42,22 @@
 
 int smile_decode(s_stream *strm)
 {
-    unsigned char *curr;
     struct decode_state *state;
     const unsigned char *next;  /* next input */
     unsigned char *put;         /* next output */
     unsigned int have, left;    /* available input and output */
     unsigned long hold;         /* bit buffer */
     unsigned int bits;          /* bits in bit buffer */
-    unsigned int bytes;
 #ifdef DEBUG
     unsigned int debug_bytes_output;    /* local variable for DEBUG_OUTPUT macro */
 #endif
     unsigned int in, out;       /* save starting available input and output */
-    unsigned int copy;          /* number of stored or match bytes to copy */
-    unsigned char *from;        /* where to copy match bytes from */
-    unsigned int len;           /* length to copy for repeats, bits to drop */
     int ret = 0;                /* return code */
 
     int copy_string_length;             /* local variable for COPY_STRING macro */
     char copy_nb_buf[21];               /* local variable for COPY_NB macro (21 for up to 20 digits) */
     int smile_key_length;
     int smile_value_length;
-    short smile_value_lookup;
     unsigned long smile_zzvarint_decode;/* local variable for VARINT_DECODE macro */
     int quote_idx;
 

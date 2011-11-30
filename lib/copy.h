@@ -32,7 +32,8 @@
         if (left < copy_string_length) { \
             goto out; \
         } \
-        strncpy(put, s, copy_string_length); \
+        /* Cast here is safe enough (dump copy) */ \
+        strncat((char*) put, (char*) (s), copy_string_length); \
         /* Update pointer to output buffer */ \
         put += copy_string_length; \
         /* Update total number of bytes written */ \

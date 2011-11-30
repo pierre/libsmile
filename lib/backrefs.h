@@ -26,8 +26,8 @@
 #define SAVE_KEY_STRING(l) \
     do { \
         state->max_keys_ref_value++; \
-        strncpy(state->keys_tables[state->max_keys_ref_value], next, l); \
-        state->keys_tables[state->max_keys_ref_value][l] = '\0'; \
+        /* Cast here is safe enough (dump copy) */ \
+        strncat((char*) state->keys_tables[state->max_keys_ref_value], (char*) next, l); \
     } while(0)
 
 /*
@@ -39,8 +39,8 @@
 #define SAVE_VALUE_STRING(l) \
     do { \
         state->max_values_ref_value++; \
-        strncpy(state->values_tables[state->max_values_ref_value], next, l); \
-        state->values_tables[state->max_values_ref_value][l] = '\0'; \
+        /* Cast here is safe enough (dumb copy) */ \
+        strncat((char*) state->values_tables[state->max_values_ref_value], (char*) next, l); \
     } while(0)
 
 /*

@@ -204,9 +204,11 @@ int smile_decode(s_stream *strm)
                     NOT_IMPLEMENTED("value long unicode");
                 } else if (BYTE() >= 0xE8 && BYTE() < 0xEC) {
                     NOT_IMPLEMENTED("value long shared string reference");
-                } else if (BYTE() >= 0xEC && BYTE() < 0xF8) {
+                } else if (BYTE() >= 0xEC && BYTE() < 0xF0) {
                     // Binary, 7-bit encoded
                     NOT_IMPLEMENTED("value binary");
+                } else if (BYTE() >= 0xF0 && BYTE() < 0xF8) {
+                    RESERVED("0xF0 <= value <= 0xF8");
                 } else if (BYTE() == 0xF8) {
                     // START_ARRAY
                     COPY_STRING("[");

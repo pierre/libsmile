@@ -34,6 +34,10 @@ UNSMILE_LIBS = $(CURDIR)/tools/unsmile.c $(CURDIR)/tools/usage.o
 unsmile: $(LIB_FILE) $(UNSMILE_LIBS)
 	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $(UNSMILE_LIBS) $(LIB_OBJS)
 
+.PHONY: check
+check: unsmile
+	@$(CURDIR)/test/test_data.sh
+
 .PHONY: clean
 clean:
 	@find . \

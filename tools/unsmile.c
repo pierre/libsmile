@@ -18,8 +18,10 @@
 #include <fcntl.h>
 #include <getopt.h>
 #include <locale.h>
+#include <stdio.h>
 #include <string.h>
 #include <sys/stat.h>
+#include <wchar.h>
 
 #include "usage.h"
 #include <smile.h>
@@ -30,11 +32,12 @@ static const char unsmile_usage[] = "unsmile [-p|--pretty] <file>";
 
 int main(int argc, char **argv)
 {
-    int opt, fd = -1, status = 0, pretty = 0, ret = 0, idx = 0;
+    int opt, fd = -1, status = 0, pretty = 0, ret = 0, idx = 0, utf8 = 1;
     struct stat st;
     const char* path;
-    unsigned char src[BUFFER_SIZE], dst[BUFFER_SIZE];
+    char src[BUFFER_SIZE], dst[BUFFER_SIZE];
     ssize_t bytes_read, bytes_decoded;
+    wchar_t bytes_out[BUFFER_SIZE];
     static const struct option opts[] =
     {
         { "pretty", no_argument, NULL, 'p' },
@@ -88,8 +91,25 @@ int main(int argc, char **argv)
         dprintf("read(\"%s\"): %zd bytes", path, bytes_read);
         bytes_decoded = smile_decode_block(dst, BUFFER_SIZE, src, bytes_read);
 
-        for (idx = 0; idx < bytes_decoded; idx++) {
-            putchar(dst[idx]);
+        // Convert to wide characters
+        memset(bytes_out, '\0', BUFFER_SIZE);
+        mbstowcs(bytes_out, dst, bytes_decoded);
+
+        /* 0 queries the current mode */
+        if (fwide(stdout, 0) == 0) {
+            /* stdout has no specific char mode yet, attempt to set to wide */
+            if (fwide(stdout, 1) <= 0) {
+                /* a value greater than zero switches to wide character mode */
+                utf8 = 0;
+            }
+        }
+
+        if (!utf8) {
+            for (idx = 0; idx < bytes_decoded; idx++) {
+                putchar(dst[idx]);
+            }
+        } else {
+            wprintf(L"%ls", bytes_out);
         }
     }
 

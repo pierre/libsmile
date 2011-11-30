@@ -1,9 +1,6 @@
 #!/bin/bash -eu
 
-BASE=$PWD/$(dirname $0)/..
-
-# Recompile to remove debug flags
-make clean && make
+BASE=$(dirname $0)/..
 
 function test_file()
 {

@@ -35,6 +35,8 @@
  *
  * If there isn't enough bytes in the input buffer, return from smile_decode,
  * saving enough state to be able to resume
+ *
+ * TODO: cache state->read
  */
 #define PULL_BYTE() \
     do { \
@@ -42,8 +44,10 @@
         if (have <= 0) { \
             goto out; \
         } \
-        /* Update number of bytes left in the current output buffer */ \
+        /* Update number of bytes left in the current input buffer */ \
         have--; \
+        /* Update the number of bytes read */ \
+        state->read++; \
         /* Update the bit buffer */ \
         hold += (unsigned long)(*next++) << bits; \
         /* Update the number of bits in the bit buffer */ \

@@ -92,6 +92,8 @@
         left -= l; \
         /* Update number of bytes left in the current input buffer */ \
         have -= l; \
+        /* Update the number of bytes read */ \
+        state->read += l; \
     } while (0)
 
 #define COPY_VARIABLE_LENGTH_STRING() \
@@ -103,6 +105,8 @@
         /* Drop end-of-string marker */ \
         next++; \
         have--; \
+        /* Update the number of bytes read */ \
+        state->read++; \
     } while(0)
 
 #define LOOK_FOR_STRING_LENGTH() \

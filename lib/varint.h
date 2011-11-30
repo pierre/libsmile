@@ -24,6 +24,8 @@
 
 /*
  * Decode an unsigned varint into smile_zzvarint_decode
+ *
+ * TODO: cache state->read
  */
 #define VARINT_DECODE() \
     do { \
@@ -39,6 +41,8 @@
             next++; \
             /* Update number of bytes left in the current input buffer */ \
             have--; \
+            /* Update the number of bytes read */ \
+            state->read++; \
         } \
         /* Check we actually reached the end of the varint */ \
         if (!(*next & 0x80)) { \
@@ -51,6 +55,8 @@
         next++; \
         /* Update number of bytes left in the current input buffer */ \
         have--; \
+        /* Update the number of bytes read */ \
+        state->read++; \
     } while (0);
 
 /*

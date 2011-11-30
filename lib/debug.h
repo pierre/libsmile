@@ -43,9 +43,13 @@
 
 /*
  * Print the content of the next byte in the input buffer
+ *
+ * state->read is useful to debug a smile file with od, e.g. for 699:
+ *
+ *      od -a -t x1 -j699 -N16 ./data/smile/db100.xml.smile
  */
 #define DEBUG_STREAM_BYTE() \
-    printf("DEBUG: [%d] %c (0x%lx) (%d|%d)\n", state->mode, *next, *next, have, left)
+    printf("DEBUG: [%d] %c (0x%lx) (%d|%d|%d)\n", state->mode, *next, *next, state->read, have, left)
 
 /*
  * Print the content of the output buffer

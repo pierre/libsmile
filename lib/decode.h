@@ -65,6 +65,7 @@ struct decode_state {
     decode_mode mode;
     unsigned long hold;         /* input bit accumulator */
     unsigned bits;              /* number of bits in "hold" */
+    unsigned long read;         /* protected copy of input count */
     unsigned long total;        /* protected copy of output count */
 
     int nested_depth;           /* pointer to current nest level */

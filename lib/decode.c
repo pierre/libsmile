@@ -40,19 +40,6 @@
         state->bits = bits; \
     } while (0)
 
-#define ERROR_REPORT(prefix, msg, error) \
-    do { \
-        /* TODO Should go in strm->msg */ \
-        fprintf(stderr, "%s: %s\n", prefix, msg); \
-        state->mode = BAD; \
-        ret = error; \
-        goto out; \
-    } while (0)
-
-#define ERROR(s)            ERROR_REPORT("ERROR", s, -30)
-#define RESERVED(s)         ERROR_REPORT("RESERVED", s, -20)
-#define NOT_IMPLEMENTED(s)  ERROR_REPORT("NOT IMPLEMENTED", s, -10)
-
 #define ZZ_DECODE(n) (((n) >> 1) ^ (-((n) & 1)))
 
 #define ZZVARINT_DECODE() \

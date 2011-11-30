@@ -28,6 +28,7 @@
 #include "bits.h"
 #include "copy.h"
 #include "debug.h"
+#include "error.h"
 
 
 struct smile_header {

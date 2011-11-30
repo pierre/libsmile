@@ -17,7 +17,11 @@ unsmile will read Smile binary data and output plain text Json, as defined by rf
 DIAGNOSTICS
 -----------
 The exit status (or error level) takes on the following values:
-  0      normal; no errors or warnings detected.
+
+        0      normal; no errors or warnings detected
+        -38    error; key or value type decoding not implemented
+        -71    error; invalid data stream
+        -84    error; found reserved byte sequence
 
 URL
 ---
@@ -33,4 +37,4 @@ unsmile is based on libsmile, written by Pierre-Alexandre Meyer <pierre@mouraf.o
 VERSIONS
 --------
 v0.1   July 11      Initial version
-v0.1   November 11  Update to libsmile v0.2
+v0.2   November 11  Update to libsmile v0.2

@@ -128,7 +128,9 @@ int smile_decode(s_stream *strm)
                 }
             }
 
-            if (BYTE() >= 0x01 && BYTE() <= 0x1f) {
+            if (BYTE() == 0x00) {
+                // Value 0x00 has no specific handling
+            } else if (BYTE() >= 0x01 && BYTE() <= 0x1f) {
                 // 10 bit lookup
                 PULL_BITS(2);
 
@@ -188,7 +190,6 @@ int smile_decode(s_stream *strm)
                 COPY_VALUE_STRING();
             } else if (BYTE() >= 0xA0 && BYTE() <= 0xBF) {
                 // Small Unicode
-                NOT_IMPLEMENTED("value small unicode");
                 // 5 LSB used to indicate _byte_ lengths from 34 to 65
                 smile_value_length = (BYTE() & 0x1F) + 33;
                 COPY_VALUE_STRING();
@@ -233,8 +234,15 @@ int smile_decode(s_stream *strm)
                 } else if (BYTE() == 0xFB) {
                     // Reserved
                     RESERVED("value == 0xFB");
-                } else {
-                    NOT_IMPLEMENTED("value >= 0xFC");
+                } else if (BYTE() == 0xFC) {
+                    ERROR("Found end-of-String marker 0xFC in value mode");
+                } else if (BYTE() == 0xFD) {
+                    NOT_IMPLEMENTED("raw binary data");
+                } else if (BYTE() == 0xFF) {
+                    // Optional end marker
+                    state->mode = DONE;
+                    CLEAR_BITS();
+                    break;
                 }
             }
             if (!state->in_array[state->nested_depth]) {
@@ -253,7 +261,7 @@ int smile_decode(s_stream *strm)
             }
 
             // Byte ranges are divided in 4 main sections (64 byte values each)
-            if (BYTE() >= 0x01 && BYTE() <= 0x1F) {
+            if (BYTE() >= 0x00 && BYTE() <= 0x1F) {
                 // Reserved for future use
                 RESERVED("0x01 <= key <= 0x1F");
             } else if (BYTE() == 0x20) {
@@ -314,7 +322,9 @@ int smile_decode(s_stream *strm)
         case BAD:
             ret = -1;
             goto out;
-        DONE:
+        case DONE:
+            // Got optional end marker, 0xFF
+            ret = 0;
             goto out;
         default:
             strm->msg = (char *)"shouldn't get here";

@@ -52,7 +52,7 @@
 #define COPY_NB(n) \
     do { \
         memset(copy_nb_buf, '\0', 21); \
-        sprintf(copy_nb_buf, "%ld", n); \
+        sprintf(copy_nb_buf, "%ld", (long)(n)); \
         COPY_STRING(copy_nb_buf); \
     } while (0)
 

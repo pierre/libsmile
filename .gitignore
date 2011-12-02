@@ -38,3 +38,8 @@ unsmile
 libsmile.a
 test.sh
 unsmile.dSYM/
+php/libsmile.php
+php/libsmile_wrap.c
+php/php_libsmile.h
+ruby/build/Makefile
+ruby/build/libsmile_wrap.c

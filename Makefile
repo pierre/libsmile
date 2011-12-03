@@ -20,7 +20,7 @@ unsmile: $(LIB_OBJS) $(UNSMILE_LIBS)
 
 .PHONY: check
 check: unsmile
-	@$(CURDIR)/test/test_data.sh
+	@$(TEST_DIR)/test.sh
 
 .PHONY: clean
 clean:
@@ -31,13 +31,14 @@ clean:
 
 # Extensions
 
-PHP_DIR = $(CURDIR)/php
-
 libsmile-php: $(LIB_FILE)
 	@cd $(PHP_DIR) && \
 		phpize && \
 		./configure --enable-libsmile && \
 		$(MAKE)
+
+test-php:
+	$(PHP) -c $(TEST_DIR) $(TEST_DIR)/test.php
 
 install-php:
 	cp -f $(PHP_DIR)/modules/libsmile.so `php-config --extension-dir`

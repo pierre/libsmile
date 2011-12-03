@@ -38,7 +38,11 @@ SMILE_INCLUDE = -I$(CURDIR)/include
 CFLAGS   += -std=c99 -pedantic -Wall -Wmissing-prototypes -Wstrict-prototypes -O2 -fomit-frame-pointer -I. $(SMILE_INCLUDE)
 LDFLAGS  += -g
 
+PHP      = php
 RUBY     = ruby
+
+TEST_DIR = $(CURDIR)/test
+PHP_DIR  = $(CURDIR)/php
 
 # Common stanza to make gcc generate .*.d dependency files
 MAKEDEPS = -Wp,-MT,$@,-MD,$(dir $@).$(notdir $@).d

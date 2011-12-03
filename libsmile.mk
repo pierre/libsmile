@@ -9,6 +9,8 @@ LC_COLLATE=C
 LC_NUMERIC=C
 export LC_COLLATE LC_NUMERIC
 
+UNAME := $(shell uname)
+
 BINDIR   = /usr/bin
 SBINDIR  = /sbin
 LIBDIR   = /usr/lib
@@ -26,7 +28,11 @@ OBJCOPY  = objcopy
 STRIP    = strip
 CC       = gcc
 LD       = ld
+ifeq ($(UNAME), Darwin)
+LIBTOOL  = glibtool
+else
 LIBTOOL  = libtool
+endif
 
 SMILE_INCLUDE = -I$(CURDIR)/include
 CFLAGS   += -Wall -Wmissing-prototypes -Wstrict-prototypes -O2 -fomit-frame-pointer -I. $(SMILE_INCLUDE)
@@ -45,3 +51,9 @@ UMAKEDEPS = -Wp,-MT,$@,-MMD,$(dir $@).$(notdir $@).d
 ifdef DEBUG
   CFLAGS += -DDEBUG
 endif
+
+%.o: %.c
+	$(CC) $(UMAKEDEPS) $(CFLAGS) -c -o $@ $<
+
+%.lo: %.c
+	$(LIBTOOL) --mode=compile $(CC) $(UMAKEDEPS) $(CFLAGS) -c -o $@ $<

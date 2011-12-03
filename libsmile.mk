@@ -35,7 +35,7 @@ LIBTOOL  = libtool
 endif
 
 SMILE_INCLUDE = -I$(CURDIR)/include
-CFLAGS   += -Wall -Wmissing-prototypes -Wstrict-prototypes -O2 -fomit-frame-pointer -I. $(SMILE_INCLUDE)
+CFLAGS   += -std=c99 -pedantic -Wall -Wmissing-prototypes -Wstrict-prototypes -O2 -fomit-frame-pointer -I. $(SMILE_INCLUDE)
 LDFLAGS  += -g
 
 RUBY     = ruby

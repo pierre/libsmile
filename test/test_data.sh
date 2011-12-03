@@ -6,7 +6,8 @@ function test_file()
 {
     local json_file=$1
     local smile_file=$2
-    echo "*** Testing $smile_file"
+    echo "***   C   *** Testing $smile_file"
+
     $BASE/unsmile $BASE/data/smile/$smile_file | diff -du $BASE/data/json/$json_file -
 }
 

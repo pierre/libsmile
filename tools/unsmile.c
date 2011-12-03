@@ -60,7 +60,7 @@ int main(int argc, char **argv)
         die("Can't set the specified locale! Check LANG, LC_CTYPE, LC_ALL");
     }
 
-    status = lstat(path, &st);
+    status = stat(path, &st);
     if (status < 0) {
         die("open(\"%s\"): %s", path, strerror(errno));
     } else if (S_ISDIR(st.st_mode)) {

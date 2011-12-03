@@ -55,7 +55,7 @@ int smile_decode(s_stream *strm)
     int ret = 0;                /* return code */
 
     int copy_string_length;             /* local variable for COPY_STRING macro */
-    char copy_nb_buf[21];               /* local variable for COPY_NB macro (21 for up to 20 digits) */
+    char copy_nb_buf[21];               /* local variable for COPY_{INT,LONG} macros (21 for up to 20 digits) */
     int smile_key_length;
     int smile_value_length;
     unsigned long smile_zzvarint_decode;/* local variable for VARINT_DECODE macro */
@@ -150,10 +150,10 @@ int smile_decode(s_stream *strm)
 
                 if (smile_value_length == 0) {
                     // 32-bit
-                    ZZVARINT_DECODE();
+                    ZZVARINT_DECODE_INT();
                 } else if (smile_value_length == 1) {
                     // 64-bit
-                    ZZVARINT_DECODE();
+                    ZZVARINT_DECODE_LONG();
                 } else if (smile_value_length == 2) {
                     // BigInteger
                     NOT_IMPLEMENTED("value BigInteger");
@@ -189,7 +189,7 @@ int smile_decode(s_stream *strm)
                 COPY_VALUE_STRING();
             } else if (BYTE() >= 0xC0 && BYTE() <= 0xDF) {
                 // Small integers
-                COPY_NB(ZZ_DECODE(BYTE() & 0x1F)); \
+                COPY_INT(ZZ_DECODE(BYTE() & 0x1F)); \
             } else {
                 // Misc; binary / text / structure markers
                 if (BYTE() >= 0xE0 && BYTE() < 0xE4) {

@@ -43,14 +43,27 @@
     } while (0)
 
 /*
- * Copy a signed number (int, long) into the output buffer
+ * Copy a signed int into the output buffer
+ *
+ * If there isn't enough bytes in the output buffer, return from smile_decode,
+ * saving enough state to be able to resume
+ */
+#define COPY_INT(n) \
+    do { \
+        memset(copy_nb_buf, '\0', 21); \
+        sprintf(copy_nb_buf, "%d", (int)(n)); \
+        COPY_STRING(copy_nb_buf); \
+    } while (0)
+
+/*
+ * Copy a signed long into the output buffer
  *
  * This will handle integers up to 20 digits (enough for 64 bits or 2^64 − 1)
  *
  * If there isn't enough bytes in the output buffer, return from smile_decode,
  * saving enough state to be able to resume
  */
-#define COPY_NB(n) \
+#define COPY_LONG(n) \
     do { \
         memset(copy_nb_buf, '\0', 21); \
         sprintf(copy_nb_buf, "%ld", (long)(n)); \

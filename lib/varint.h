@@ -60,17 +60,31 @@
     } while (0);
 
 /*
- * Decode a signed varint into the output buffer
+ * Decode a signed varint (int) into the output buffer
  *
  * If there isn't enough bytes in the output buffer, return from smile_decode,
  * saving enough state to be able to resume
  *
  * TODO: make it actually re-entrant
  */
-#define ZZVARINT_DECODE() \
+#define ZZVARINT_DECODE_INT() \
     do { \
         VARINT_DECODE(); \
-        COPY_NB(ZZ_DECODE(smile_zzvarint_decode)); \
+        COPY_INT(ZZ_DECODE(smile_zzvarint_decode)); \
+    } while (0);
+
+/*
+ * Decode a signed varint (long) into the output buffer
+ *
+ * If there isn't enough bytes in the output buffer, return from smile_decode,
+ * saving enough state to be able to resume
+ *
+ * TODO: make it actually re-entrant
+ */
+#define ZZVARINT_DECODE_LONG() \
+    do { \
+        VARINT_DECODE(); \
+        COPY_LONG(ZZ_DECODE(smile_zzvarint_decode)); \
     } while (0);
 
 #endif

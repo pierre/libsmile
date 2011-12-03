@@ -1,4 +1,4 @@
-SMILE_INCLUDE = -I../../include
+include $(CURDIR)/../libsmile.mk
 
 EXTENSION = libsmile.so
 
@@ -8,12 +8,12 @@ all: libsmile-ruby
 libsmile-ruby:
 	cd build && \
 		swig $(SMILE_INCLUDE) -ruby libsmile.i && \
-		ruby extconf.rb && \
-		make
+		$(RUBY) extconf.rb && \
+		$(MAKE)
 
 clean:
 	pushd build && \
-		make clean && \
+		$(MAKE) clean && \
 		popd && \
 		rm build/libsmile_wrap.c \
 		rm -f build/Makefile

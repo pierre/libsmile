@@ -4,6 +4,7 @@ a.out
 *.c.out
 *.o
 *.o.d
+*.lo.d
 Makefile.in
 aclocal.m4
 autom4te.cache/

@@ -113,6 +113,7 @@ typedef struct s_stream_s {
 } s_stream;
 
 int smile_decode(s_stream *strm);
-void smile_decode_init(s_stream *strm);
+int smile_decode_init(s_stream *strm);
+int smile_decode_reset(s_stream *strm);
 
 #endif

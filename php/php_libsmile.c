@@ -94,7 +94,7 @@ PHP_FUNCTION(libsmile_decode)
 
     char *input;
     int len;
-    char result[BUFFER_SIZE];
+    char result[BUFFER_SIZE] = {'\0'};
 
     int num_args = ZEND_NUM_ARGS();
 
@@ -108,6 +108,9 @@ PHP_FUNCTION(libsmile_decode)
 
     input = Z_STRVAL_P(zinput);
     len = Z_STRLEN_P(zinput);
+
+    // Reset for successive calls
+    smile_decode_block_reset();
 
     smile_decode_block(result, BUFFER_SIZE, input, len);
     RETVAL_STRINGL(result, strlen(result), 1);

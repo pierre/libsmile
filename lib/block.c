@@ -54,8 +54,6 @@ int smile_decode_block_init(void)
             initialized = 0;
             return -ENOMEM;
         }
-        stream.next_in = NULL;
-        stream.avail_in = 0;
         smile_decode_init(&stream);
     }
 
@@ -68,4 +66,9 @@ void smile_decode_block_exit(void)
         free(stream.workspace);
         free(stream.msg);
     }
+}
+
+int smile_decode_block_reset(void)
+{
+    return smile_decode_reset(&stream);
 }

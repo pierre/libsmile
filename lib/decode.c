@@ -339,8 +339,12 @@ out:
     return ret;
 }
 
-void smile_decode_init(s_stream *strm)
+int smile_decode_init(s_stream *strm)
 {
+    if (strm == NULL) {
+        return -1;
+    }
+
     strm->state = &WS(strm)->decode_state;
 
     // Default Smile header: shared keys are enabled, but not values
@@ -357,4 +361,33 @@ void smile_decode_init(s_stream *strm)
     // Printing
     strm->state->first_key[0] = true;
     strm->state->first_array_element[0] = true;
+
+    // Misc.
+    strm->avail_in = 0;
+    strm->total_in = 0;
+    strm->avail_out = 0;
+    strm->total_out = 0;
+    strm->state->hold = 0;
+    strm->state->bits = 0;
+    strm->state->read = 0;
+    strm->state->total = 0;
+    strm->state->nested_depth = 0;
+
+    strm->next_in = NULL;
+
+    strm->state->mode = HEAD;
+
+    return 0;
+}
+
+int smile_decode_reset(s_stream *strm)
+{
+    if (strm == NULL || strm->workspace == NULL || strm->msg == NULL) {
+        return -1;
+    }
+
+    memset(strm->workspace, '\0', sizeof(struct decode_workspace));
+    memset(strm->msg, '\0', MAX_ERROR_MSG_SIZE);
+
+    return smile_decode_init(strm);
 }

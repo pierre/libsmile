@@ -21,5 +21,6 @@
 int smile_decode_block(void *dst, int dstlen, void *src, int srclen);
 int smile_decode_block_init(void);
 void smile_decode_block_exit(void);
+int smile_decode_block_reset(void);
 
 #endif

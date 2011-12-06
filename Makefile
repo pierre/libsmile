@@ -1,48 +1,61 @@
 topdir = .
 include $(topdir)/libsmile.mk
 
-PROG    = unsmile
+############
+# libsmile #
+############
 
-SLIB_OBJS = $(CURDIR)/lib/decode.lo $(CURDIR)/lib/block.lo
-LIB_OBJS  = $(CURDIR)/lib/decode.o $(CURDIR)/lib/block.o
-LIB_H     = $(CURDIR)/lib/decode.h $(CURDIR)/api/smile.h
-LIB_FILE  = libsmile.la
+LIBSMILE_H     = $(LIB_DIR)/decode.h  $(API_DIR)/smile.h
+LIBSMILE_OBJS  = $(LIB_DIR)/decode.o  $(LIB_DIR)/block.o
+SLIBSMILE_OBJS = $(LIB_DIR)/decode.lo $(LIB_DIR)/block.lo
+LIBSMILE       = $(CURDIR)/libsmile.la
 
-all: $(PROG) $(LIB_FILE)
+all: $(UNSMILE) $(LIBSMILE)
 
-$(LIB_FILE): $(SLIB_OBJS)
-	$(LIBTOOL) --mode=link $(CC) $(CFLAGS) $(LDFLAGS) -o $@ $(SLIB_OBJS)
+$(LIBSMILE): $(SLIBSMILE_OBJS)
+	$(LIBTOOL) --tag=CC --mode=link $(CC) $(CFLAGS) $(LDFLAGS) -o $@ $(SLIBSMILE_OBJS)
 
-UNSMILE_LIBS = $(CURDIR)/tools/unsmile.c $(CURDIR)/tools/usage.o
-.PHONY: unsmile
-unsmile: $(LIB_OBJS) $(UNSMILE_LIBS)
-	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $(UNSMILE_LIBS) $(LIB_OBJS)
+###########
+# unsmile #
+###########
 
-.PHONY: check
+UNSMILE      = unsmile
+UNSMILE_OBJS = $(CURDIR)/tools/unsmile.o $(CURDIR)/tools/usage.o
+
+$(UNSMILE): $(SLIBSMILE_OBJS) $(UNSMILE_OBJS)
+	$(LIBTOOL) --tag=CC --mode=link $(CC) $(CFLAGS) $(LDFLAGS) -o $@ $(SLIBSMILE_OBJS) $(UNSMILE_OBJS)
+
 check: unsmile
 	@$(TEST_DIR)/test.sh
 
-.PHONY: clean
-clean:
+clean: clean-php
 	@find . \
 		\( -name '*.[oas]' -o -name '.*.cmd' \
-		-o -name '.*.d' -o -name '.*.tmp' -o -name '*.lo' \
-		-o -name '.tmp_*.o.*' \) -type f -print | xargs rm -f
+		-o -name '.*.d' -o -name '.*.tmp' -o -name '*.lo' -o -name '.tmp_*.o.*' \
+		-o -name $(UNSMILE) -o -name `basename $(LIBSMILE)` \) -type f -print | xargs rm -f && \
+		rm -rf $(UNSMILE).dSYM $(CURDIR)/.libs
 
-# Extensions
+#################
+# PHP Extension #
+#################
 
-libsmile-php: $(LIB_FILE)
+PHP_LIBSMILE = $(PHP_DIR)/modules/libsmile.so
+
+php: $(PHP_LIBSMILE)
+
+$(PHP_LIBSMILE): $(LIBSMILE)
 	@cd $(PHP_DIR) && \
 		phpize && \
 		./configure --enable-libsmile && \
 		$(MAKE)
 
-test-php:
+check-php:
 	$(PHP) -c $(TEST_DIR) $(TEST_DIR)/test.php
 
 install-php:
-	cp -f $(PHP_DIR)/modules/libsmile.so `php-config --extension-dir`
+	@cp -f $(PHP_LIBSMILE) `php-config --extension-dir`
 
 clean-php:
 	@cd $(PHP_DIR) && \
-		phpize --clean
+		phpize --clean && \
+		rm -f config.h.in~

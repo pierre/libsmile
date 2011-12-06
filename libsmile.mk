@@ -41,6 +41,8 @@ LDFLAGS  += -g
 PHP      = php
 RUBY     = ruby
 
+API_DIR  = $(CURDIR)/api
+LIB_DIR  = $(CURDIR)/lib
 TEST_DIR = $(CURDIR)/test
 PHP_DIR  = $(CURDIR)/php
 
@@ -57,7 +59,7 @@ ifdef DEBUG
 endif
 
 %.o: %.c
-	$(CC) $(UMAKEDEPS) $(CFLAGS) -c -o $@ $<
+	$(CC) $(UMAKEDEPS) $(CFLAGS) -c $< -o $@
 
 %.lo: %.c
-	$(LIBTOOL) --mode=compile $(CC) $(UMAKEDEPS) $(CFLAGS) -c -o $@ $<
+	$(LIBTOOL) --tag=CC --mode=compile $(CC) $(UMAKEDEPS) $(CFLAGS) -c $< -o $@

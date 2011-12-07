@@ -41,10 +41,11 @@ LDFLAGS  += -g
 PHP      = php
 RUBY     = ruby
 
-API_DIR  = $(CURDIR)/api
-LIB_DIR  = $(CURDIR)/lib
-TEST_DIR = $(CURDIR)/test
-PHP_DIR  = $(CURDIR)/php
+API_DIR   = $(CURDIR)/api
+LIB_DIR   = $(CURDIR)/lib
+TEST_DIR  = $(CURDIR)/test
+PHP_DIR   = $(CURDIR)/php
+RUBY_DIR  = $(CURDIR)/ruby
 
 # Common stanza to make gcc generate .*.d dependency files
 MAKEDEPS = -Wp,-MT,$@,-MD,$(dir $@).$(notdir $@).d

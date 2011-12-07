@@ -11,10 +11,7 @@ if CONFIG['CC'] =~ /gcc/
 end
 $LDFLAGS << ' -lsmile'
 
-dir_config(extension_name, "../../include", "../../")
+dir_config(extension_name, "../include", "../.libs")
 find_header("smile.h")
-find_library("libsmile", "smile_decode_block_init")
-find_library("libsmile", "smile_decode_block")
-find_library("libsmile", "smile_decode_block_exit")
 
 create_makefile(extension_name)

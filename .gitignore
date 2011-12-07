@@ -42,8 +42,7 @@ test.sh
 unsmile.dSYM/
 php/libsmile.php
 php/libsmile_wrap.c
-ruby/build/Makefile
-ruby/build/libsmile_wrap.c
+ruby/Makefile
 *.swp
 php/Makefile.fragments
 php/Makefile.global

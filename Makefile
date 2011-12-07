@@ -35,6 +35,7 @@ clean: clean-php
 		-o -name $(UNSMILE) -o -name `basename $(LIBSMILE)` \) -type f -print | xargs rm -f && \
 		rm -rf $(UNSMILE).dSYM $(CURDIR)/.libs
 
+
 #################
 # PHP Extension #
 #################
@@ -59,3 +60,27 @@ clean-php:
 	@cd $(PHP_DIR) && \
 		phpize --clean && \
 		rm -f config.h.in~
+
+
+##################
+# Ruby Extension #
+##################
+
+RUBY_LIBSMILE = $(RUBY_DIR)/libsmile.bundle
+
+ruby: $(RUBY_LIBSMILE)
+
+$(RUBY_LIBSMILE): $(LIBSMILE)
+	@cd $(RUBY_DIR) && \
+		$(RUBY) extconf.rb &&
+		$(MAKE)
+
+check-ruby:
+	$(RUBY) $(TEST_DIR)/test.rb
+
+install-ruby:
+
+clean-ruby:
+	@cd $(RUBY_DIR) && \
+		$(MAKE) clean && \
+		rm -f Makefile

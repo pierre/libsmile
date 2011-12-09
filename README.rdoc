@@ -1,16 +1,63 @@
-= Libsmile
+== Libsmile
 
 C implementation of the Smile binary format (http://wiki.fasterxml.com/SmileFormatSpec).
 
-The library ships with a command line tool (unsmile) to decode binary files on the command line.
+The library ships with a command line tool (unsmile) to decode binary files on the command line, as well as extensions for scripting languages.
+
+=== Status
+
+libsmile is under heavy development and is still considered experimental.
+
+What is working:
+
+* Single block decoding smile -> json (up to 64k by default, size can be increased)
+* Shared String references (see below for caveat)
+* Basic PHP, Ruby and Python support
+
+What is missing:
+
+* The following decoding use cases are not yet supported due to lack of test data (feel free to contribute json/smile samples, see data/ directory): long String, long Shared String reference for Keys decoding, BigInteger, long Unicode String, long Shared String reference, Binary, Raw Binary for Values decoding
+* Streaming support: API has been designed to do chunk decoding, but is not yet functional (only single chunk for now between reset)
+* Encoding support json -> smile
+
+
+=== C library build
+
+To build libsmile.la:
+
+  make
+
+To run tests:
+
+  make check
+
+=== Extensions build
+
+To build extensions:
+
+  make <ext>
+
+To run tests:
+
+  make check-<ext>
+
+where ext is php, ruby or py.
 
 == Usage
 
+=== unsmile
+
+  libsmile $ ./unsmile 
+  usage: unsmile <file>
+
+For example:
+
+  libsmile $ ./unsmile data/smile/test1.smile 
+  {"test key":true,"nullField":null,"foo":1,"foo2":{"a":3},"aãb":-323,"2":[1,2,3],"\"foo\"":"foo\nbar"}
+
+=== C Library
+
 The API can be found under include/smile.h. A good starting point is tools/unsmile.c for a working example.
-
-== Build
-
-  make
 
 = License (see LICENSE-2.0.txt file for full license)
 

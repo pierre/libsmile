@@ -30,6 +30,7 @@ CC       = gcc
 LD       = ld
 ifeq ($(UNAME), Darwin)
 LIBTOOL  = glibtool
+CC       = gcc-9
 else
 LIBTOOL  = libtool
 endif

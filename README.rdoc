@@ -23,9 +23,7 @@ What is missing:
 
 === Building on macOS
 
-```
-brew install libtool gcc@9
-```
+  brew install libtool gcc@9
 
 Then follow the below instructions.
 

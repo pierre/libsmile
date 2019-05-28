@@ -21,6 +21,14 @@ What is missing:
 * Encoding support json -> smile
 
 
+=== Building on macOS
+
+```
+brew install libtool gcc@9
+```
+
+Then follow the below instructions.
+
 === C library build
 
 To build libsmile.la:

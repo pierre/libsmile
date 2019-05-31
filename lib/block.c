@@ -18,11 +18,13 @@
 
 #include "decode.h"
 
-static s_stream stream;
-static int initialized;
-
 int smile_decode_block(void *dst, int dstlen, void *src, int srclen)
 {
+    s_stream stream;
+    stream.workspace = malloc(sizeof(struct decode_workspace));
+    stream.msg = malloc(MAX_ERROR_MSG_SIZE);
+    smile_decode_init(&stream);
+
     int err = 0;
 
     stream.next_in = src;
@@ -34,8 +36,13 @@ int smile_decode_block(void *dst, int dstlen, void *src, int srclen)
     // Decode block
     err = smile_decode(&stream);
     if (err == -1) {
+        free(stream.workspace);
+        free(stream.msg);
         goto err;
     }
+
+    free(stream.workspace);
+    free(stream.msg);
 
     return stream.total_out;
 
@@ -43,32 +50,4 @@ err:
     printf("Error %d while decoding! %s\n", err, stream.msg);
     printf("%p(%d)->%p(%d)\n", src, srclen, dst, dstlen);
     return -EIO;
-}
-
-int smile_decode_block_init(void)
-{
-    if (!initialized++) {
-        stream.workspace = malloc(sizeof(struct decode_workspace));
-        stream.msg = malloc(MAX_ERROR_MSG_SIZE);
-        if (!stream.workspace || !stream.msg) {
-            initialized = 0;
-            return -ENOMEM;
-        }
-        smile_decode_init(&stream);
-    }
-
-    return 0;
-}
-
-void smile_decode_block_exit(void)
-{
-    if (!--initialized) {
-        free(stream.workspace);
-        free(stream.msg);
-    }
-}
-
-int smile_decode_block_reset(void)
-{
-    return smile_decode_reset(&stream);
 }

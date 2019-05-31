@@ -21,6 +21,7 @@
 #define EPROTO      71  /* Protocol error */
 #define EILSEQ      84  /* Illegal byte sequence */
 
+
 /*
  * Report an error and exit
  *
@@ -32,7 +33,6 @@
 #define ERROR_REPORT(prefix, msg, error) \
     do { \
         /* TODO Should go in strm->msg */ \
-        fprintf(stderr, "%s: %s\n", prefix, msg); \
         state->mode = BAD; \
         ret = error; \
         goto out; \

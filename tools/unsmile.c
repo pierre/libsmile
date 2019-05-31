@@ -27,7 +27,7 @@
 #include "usage.h"
 #include <smile.h>
 
-#define BUFFER_SIZE 65536
+#define BUFFER_SIZE 32768
 
 static const char unsmile_usage[] = "unsmile [-p|--pretty] <file>";
 
@@ -73,11 +73,6 @@ int main(int argc, char **argv)
         die("open(\"%s\"): %s", path, strerror(errno));
     }
 
-    // Real work begins...
-    if (smile_decode_block_init()) {
-        die("Unable to initialize smile decoder");
-    }
-
     // Read block by block
     for (;;) {
         bytes_read = read(fd, src, BUFFER_SIZE);
@@ -116,6 +111,5 @@ int main(int argc, char **argv)
 
 exit:
     close(fd);
-    smile_decode_block_exit();
     exit(ret);
 }

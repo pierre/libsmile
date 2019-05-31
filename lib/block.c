@@ -25,8 +25,6 @@ int smile_decode_block(void *dst, int dstlen, void *src, int srclen)
     stream.msg = malloc(MAX_ERROR_MSG_SIZE);
     smile_decode_init(&stream);
 
-    int err = 0;
-
     stream.next_in = src;
     stream.avail_in = srclen;
 
@@ -34,20 +32,15 @@ int smile_decode_block(void *dst, int dstlen, void *src, int srclen)
     stream.avail_out = dstlen;
 
     // Decode block
-    err = smile_decode(&stream);
-    if (err == -1) {
-        free(stream.workspace);
-        free(stream.msg);
-        goto err;
-    }
+    int err = smile_decode(&stream);
 
     free(stream.workspace);
+
+    if (err == -1) {
+      return -EIO;
+    }
+
     free(stream.msg);
 
     return stream.total_out;
-
-err:
-    printf("Error %d while decoding! %s\n", err, stream.msg);
-    printf("%p(%d)->%p(%d)\n", src, srclen, dst, dstlen);
-    return -EIO;
 }

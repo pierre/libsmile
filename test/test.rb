@@ -26,7 +26,7 @@ def test_one_file(json_filename, smile_filename)
 end
 
 files = ['json-org-sample1', 'json-org-sample2', 'json-org-sample3', 'json-org-sample4', 'json-org-sample5',
-         'numbers-int-4k', 'numbers-int-64k', 'test1', 'test2'];
+         'numbers-int-4k', 'numbers-int-64k', 'test1', 'test2', 'test3'];
 
 files.each do |file|
   test_one_file "#{file}.jsn", "#{file}.smile"

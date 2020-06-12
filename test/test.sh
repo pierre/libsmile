@@ -19,6 +19,6 @@ for i in 4k 64k; do
   test_file numbers-int-$i.jsn numbers-int-$i.smile
 done
 
-for i in 1 2; do
+for i in 1 2 3; do
     test_file test$i.jsn test$i.smile
 done

@@ -180,12 +180,12 @@ int smile_decode(s_stream *strm)
             } else if (BYTE() >= 0x80 && BYTE() <= 0x9F) {
                 // Tiny Unicode
                 // 5 LSB used to indicate _byte_ lengths from 2 to 33
-                smile_value_length = (BYTE() & 0x1F) + 1;
+                smile_value_length = (BYTE() & 0x1F) + 2;
                 COPY_VALUE_STRING();
             } else if (BYTE() >= 0xA0 && BYTE() <= 0xBF) {
                 // Small Unicode
                 // 5 LSB used to indicate _byte_ lengths from 34 to 65
-                smile_value_length = (BYTE() & 0x1F) + 33;
+                smile_value_length = (BYTE() & 0x1F) + 34;
                 COPY_VALUE_STRING();
             } else if (BYTE() >= 0xC0 && BYTE() <= 0xDF) {
                 // Small integers
